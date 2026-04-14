@@ -1,0 +1,41 @@
+{
+  "name": "ecommerce",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@prisma/client": "^5.22.0",
+    "framer-motion": "^12.38.0",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.8.0",
+    "next": "15.0.0",
+    "next-auth": "^5.0.0-beta.25",
+    "prisma": "^5.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "15.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
