@@ -5,7 +5,10 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import multer from 'multer';
+import * as xlsx from 'xlsx';
 import { syncSearchIndex, searchSuggestions, searchFull } from './services/search.service';
+
 
 dotenv.config();
 
@@ -17,10 +20,541 @@ syncSearchIndex();
 
 // Security and parser middleware - MUST BE AT THE TOP
 app.use(cors({
-  origin: 'http://localhost:3000', // Only allow Next.js app to access securely
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:4000', 'http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
+app.use('/uploads', express.static('public/uploads'));
+
+app.get('/api/ping', (req, res) => res.json({ message: 'pong' }));
+app.get('/api/very-unique-test', (req, res) => res.json({ message: 'working' }));
+
+// ----------------------------------------------------
+// ADMIN APIs (Dashboard & Management)
+// ----------------------------------------------------
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const totalRevenue = await prisma.order.aggregate({
+      where: { status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] } },
+      _sum: { totalAmount: true }
+    });
+
+    const totalOrders = await prisma.order.count();
+    const totalUsers = await prisma.user.count({ where: { role: 'USER' } });
+    const lowStockCount = await prisma.product.count({ where: { inventory: { lt: 10 } } });
+
+    res.json({
+      revenue: totalRevenue._sum.totalAmount || 0,
+      orders: totalOrders,
+      users: totalUsers,
+      lowStock: lowStockCount,
+      growth: 15.4 // Simulated growth for UI
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
+app.get('/api/admin/products', async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      include: { category: true, images: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch admin products" });
+  }
+});
+
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch admin orders" });
+  }
+});
+
+app.post('/api/admin/products', async (req, res) => {
+  try {
+    const { 
+      name, description, price, originalPrice, 
+      sku, inventory, categoryId, tag, videoUrl,
+      images, colors, sizes, fastDelivery, listedFor
+    } = req.body;
+
+    const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 10000);
+
+    const product = await prisma.product.create({
+      data: {
+        name,
+        slug,
+        description,
+        price: parseFloat(price),
+        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        sku,
+        listedFor,
+        inventory: parseInt(inventory),
+        tag,
+        videoUrl,
+        fastDelivery: !!fastDelivery,
+        categoryId,
+        images: {
+          create: images.map((url: string) => ({ url }))
+        },
+        colors: {
+          create: colors.map((c: any) => ({ name: c.name, hexCode: c.hexCode }))
+        },
+        sizes: {
+          create: sizes.map((s: string) => ({ name: s }))
+        }
+      }
+    });
+
+    res.status(201).json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create product" });
+  }
+});
+
+app.put('/api/admin/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      name, description, price, originalPrice, 
+      sku, inventory, categoryId, tag, videoUrl,
+      images, colors, sizes, fastDelivery, listedFor
+    } = req.body;
+
+    // Delete existing relations to "overwrite" them
+    await prisma.productImage.deleteMany({ where: { productId: id } });
+    await prisma.color.deleteMany({ where: { productId: id } });
+    await prisma.size.deleteMany({ where: { productId: id } });
+
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        description,
+        price: parseFloat(price),
+        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        sku,
+        listedFor,
+        inventory: parseInt(inventory),
+        tag,
+
+        videoUrl,
+        fastDelivery: !!fastDelivery,
+        categoryId,
+        images: {
+          create: images.map((url: string) => ({ url }))
+        },
+        colors: {
+          create: colors.map((c: any) => ({ name: c.name, hexCode: c.hexCode }))
+        },
+        sizes: {
+          create: sizes.map((s: string) => ({ name: s }))
+        }
+      }
+    });
+
+    res.json(product);
+  } catch (error) {
+    console.error("UPDATE ERROR:", error);
+    res.status(500).json({ error: "Failed to update product", details: error instanceof Error ? error.message : String(error) });
+  }
+});
+
+
+app.delete('/api/admin/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Cascading delete manually if not set in DB
+    await prisma.productImage.deleteMany({ where: { productId: id } });
+    await prisma.color.deleteMany({ where: { productId: id } });
+    await prisma.size.deleteMany({ where: { productId: id } });
+    await prisma.cartItem.deleteMany({ where: { productId: id } });
+    await prisma.wishlistItem.deleteMany({ where: { productId: id } });
+    
+    await prisma.product.delete({
+      where: { id }
+    });
+
+    res.json({ message: "Product deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete product" });
+  }
+});
+
+// Bulk Upload Setup
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    const results = [];
+    for (const row of data as any[]) {
+      try {
+        const { 
+          name, description, price, originalPrice, sku, inventory, 
+          categoryName, tag, videoUrl, images, colors, sizes, fastDelivery,
+          listedFor
+        } = row;
+
+        if (!name || !price || !categoryName) continue;
+
+        let category = await prisma.category.findFirst({
+           where: { name: categoryName }
+        });
+
+        if (!category) {
+          category = await prisma.category.create({
+            data: { 
+              name: categoryName, 
+              slug: categoryName.toLowerCase().replace(/ /g, '-') 
+            }
+          });
+        }
+
+        const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 10000);
+
+        const product = await prisma.product.create({
+          data: {
+            name,
+            slug,
+            description: description || "",
+            price: parseFloat(price),
+            originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+            sku: sku || `SKU-${Math.floor(Math.random() * 100000)}`,
+            inventory: parseInt(inventory || "0"),
+            tag,
+            listedFor: listedFor || "mens_cloth",
+            videoUrl,
+            fastDelivery: String(fastDelivery).toLowerCase() === 'true',
+            categoryId: category.id,
+            images: {
+              create: images ? images.split(',').map((url: string) => ({ url: url.trim() })) : []
+            },
+            colors: {
+              create: colors ? colors.split(',').map((c: string) => {
+                const [cName, hex] = c.split('|');
+                return { name: cName.trim(), hexCode: (hex || '#000000').trim() };
+              }) : []
+            },
+            sizes: {
+              create: sizes ? String(sizes).split(',').map((s: string) => ({ name: s.trim() })) : []
+            }
+          }
+        });
+        results.push(product.id);
+      } catch (err) {
+        console.error("Bulk Item Error:", err);
+      }
+    }
+
+    res.json({ success: true, count: results.length });
+  } catch (error) {
+    console.error("Bulk Upload Error:", error);
+    res.status(500).json({ error: "Failed to process bulk upload" });
+  }
+});
+
+
+
+app.post('/api/notifications/request', async (req, res) => {
+  try {
+    const { email, productId } = req.body;
+    if (!email || !productId) return res.status(400).json({ error: "Missing required fields" });
+
+    // Check if already exists
+    const existing = await prisma.notificationRequest.findFirst({
+      where: { email, productId, status: "PENDING" }
+    });
+
+    if (existing) {
+      return res.status(200).json({ message: "Already subscribed!" });
+    }
+
+    const request = await prisma.notificationRequest.create({
+      data: { email, productId }
+    });
+
+    res.json(request);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create notification request" });
+  }
+});
+
+app.get('/api/admin/categories', async (req, res) => {
+  try {
+    const categories = await prisma.category.findMany();
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+
+
+// ----------------------------------------------------
+// WEBSITE CONFIGURATION APIs
+// ----------------------------------------------------
+app.get('/api/admin/site-config', async (req, res) => {
+  try {
+    const config = await prisma.siteConfig.findUnique({
+      where: { id: 'global' }
+    });
+    if (!config) {
+      const defaultConfig = await prisma.siteConfig.create({
+        data: { id: 'global', siteName: 'Savana Style' }
+      });
+      return res.json(defaultConfig);
+    }
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch site configuration" });
+  }
+});
+
+app.post('/api/admin/site-config', async (req, res) => {
+  try {
+    const { logoUrl, bannerUrl, bannerType, siteName } = req.body;
+    const config = await prisma.siteConfig.upsert({
+      where: { id: 'global' },
+      update: { logoUrl, bannerUrl, bannerType, siteName },
+      create: { id: 'global', logoUrl, bannerUrl, bannerType, siteName }
+    });
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update site configuration" });
+  }
+});
+
+// Generic File Upload for Admin
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const fs = require('fs');
+    const dir = './public/uploads';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`);
+  }
+});
+const diskUpload = multer({ storage: diskStorage });
+
+app.post('/api/admin/upload', diskUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  const url = `http://localhost:5000/uploads/${req.file.filename}`;
+  res.json({ url });
+});
+
+// ----------------------------------------------------
+// HOME SECTION APIs
+// ----------------------------------------------------
+app.get('/api/admin/sections', async (req, res) => {
+  try {
+    const sections = await prisma.homeSection.findMany({
+      include: { products: { include: { images: true } } },
+      orderBy: { position: 'asc' }
+    });
+    res.json(sections);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch sections" });
+  }
+});
+
+app.post('/api/admin/sections', async (req, res) => {
+  try {
+    const { title, position } = req.body;
+    const section = await prisma.homeSection.create({
+      data: { title, position: parseInt(position || '0') }
+    });
+    res.json(section);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create section" });
+  }
+});
+
+app.post('/api/admin/sections/:id/products', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { productId } = req.body;
+    const section = await prisma.homeSection.update({
+      where: { id },
+      data: {
+        products: { connect: { id: productId } }
+      }
+    });
+    res.json(section);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add product to section" });
+  }
+});
+
+app.delete('/api/admin/sections/:id/products/:productId', async (req, res) => {
+  try {
+    const { id, productId } = req.params;
+    const section = await prisma.homeSection.update({
+      where: { id },
+      data: {
+        products: { disconnect: { id: productId } }
+      }
+    });
+    res.json(section);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove product from section" });
+  }
+});
+
+app.delete('/api/admin/sections/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.homeSection.delete({ where: { id } });
+    res.json({ message: "Section deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete section" });
+  }
+});
+
+
+// ----------------------------------------------------
+// BANNER APIs
+// ----------------------------------------------------
+app.get('/api/admin/banners', async (req, res) => {
+  try {
+    const banners = await prisma.banner.findMany({
+      orderBy: { id: 'desc' }
+    });
+    res.json(banners);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch banners" });
+  }
+});
+
+app.post('/api/admin/banners', async (req, res) => {
+  try {
+    const { title, subtitle, link, imageUrl, position, isActive, showOverlay } = req.body;
+    const banner = await prisma.banner.create({
+      data: { 
+        title: title || "", 
+        subtitle: subtitle || "", 
+        link: link || "/", 
+        imageUrl, 
+        position: position || "HERO",
+        isActive: isActive !== undefined ? !!isActive : true,
+        showOverlay: showOverlay !== undefined ? !!showOverlay : true
+      }
+    });
+    res.json(banner);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to create banner" });
+  }
+});
+
+app.put('/api/admin/banners/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, subtitle, link, imageUrl, position, isActive, showOverlay } = req.body;
+    const banner = await prisma.banner.update({
+      where: { id },
+      data: { 
+        title, 
+        subtitle, 
+        link, 
+        imageUrl, 
+        position, 
+        isActive: !!isActive, 
+        showOverlay: !!showOverlay 
+      }
+    });
+    res.json(banner);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update banner" });
+  }
+});
+
+app.delete('/api/admin/banners/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.banner.delete({ where: { id } });
+    res.json({ message: "Banner deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete banner" });
+  }
+});
+
+// ----------------------------------------------------
+// CATEGORY APIs
+// ----------------------------------------------------
+app.get('/api/admin/categories', async (req, res) => {
+  try {
+    const categories = await prisma.category.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: 'asc' }
+    });
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+app.post('/api/admin/categories', async (req, res) => {
+  try {
+    const { name, image, isFeatured } = req.body;
+    const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+    const category = await prisma.category.create({
+      data: { name, slug, image, isFeatured: !!isFeatured }
+    });
+    res.json(category);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create category" });
+  }
+});
+
+app.put('/api/admin/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, image, isFeatured } = req.body;
+    const category = await prisma.category.update({
+      where: { id },
+      data: { 
+        name, 
+        image, 
+        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined 
+      }
+    });
+    res.json(category);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update category" });
+  }
+});
+
+app.delete('/api/admin/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.category.delete({ where: { id } });
+    res.json({ message: "Category deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete category" });
+  }
+});
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || '',
@@ -284,6 +818,15 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+app.get('/api/settings', async (req, res) => {
+  try {
+    const config = await prisma.siteConfig.findUnique({ where: { id: 'global' } });
+    res.json(config || { siteName: "Savana Style" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch settings" });
+  }
+});
+
 app.post('/api/coupons/validate', (req, res) => {
   const { code, cartTotal } = req.body;
   const c = code.toUpperCase();
@@ -331,8 +874,9 @@ app.get('/api/search/full', async (req, res) => {
 // ----------------------------------------------------
 // FULLY DYNAMIC: Home Page Feed with Cached Mechanism
 // ----------------------------------------------------
-app.get('/api/feed/home', cacheMiddleware(60), async (req, res) => {
+app.get('/api/feed/home', cacheMiddleware(0), async (req, res) => {
   try {
+    const config = await prisma.siteConfig.findUnique({ where: { id: 'global' } });
     const banners = await prisma.banner.findMany({ where: { isActive: true } });
     const flashSales = await prisma.flashSale.findMany({
       where: { isActive: true },
@@ -348,12 +892,46 @@ app.get('/api/feed/home', cacheMiddleware(60), async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Home Sections (Curated + Auto Tag-based)
+    const curatedSectionsData = await prisma.homeSection.findMany({
+      where: { isActive: true },
+      include: {
+        products: {
+          take: 12,
+          include: { images: true }
+        }
+      },
+      orderBy: { position: 'asc' }
+    });
+
+    const curatedSections = await Promise.all(curatedSectionsData.map(async (section) => {
+      // Find products that have a matching tag
+      const taggedProducts = await prisma.product.findMany({
+        where: { tag: section.title },
+        take: 12,
+        include: { images: true }
+      });
+
+      // Merge and remove duplicates (by ID)
+      const existingIds = new Set(section.products.map(p => p.id));
+      const newProducts = taggedProducts.filter(p => !existingIds.has(p.id));
+      
+      return {
+        ...section,
+        products: [...section.products, ...newProducts].slice(0, 12)
+      };
+    }));
+
+
     res.status(200).json({
+      config,
       banners,
       flashSales,
       hotCategories,
       specialOffers,
-      discoverProducts
+      discoverProducts,
+      tagSections: [],
+      curatedSections
     });
   } catch (error) {
     console.error(error);
@@ -823,24 +1401,31 @@ app.get('/api/wishlist', requireAuth, async (req: any, res) => {
     });
 
     if (!wishlist) {
+      // Check if user exists first to prevent foreign key errors after DB reset
+      const userExists = await prisma.user.findUnique({ where: { id: req.user.userId } });
+      if (!userExists) return res.status(401).json({ error: "User no longer exists. Please logout and login again." });
+
       wishlist = await prisma.wishlist.create({
         data: { userId: req.user.userId },
         include: { items: { include: { product: { include: { images: true } } } } }
       });
     }
 
-    const items = wishlist.items.map(item => ({
-      id: item.id,
-      productId: item.productId,
-      name: item.product.name,
-      price: item.product.price,
-      originalPrice: item.product.originalPrice,
-      image: item.product.images.find(img => img.isPrimary)?.url || item.product.images[0]?.url,
-      slug: item.product.slug
-    }));
+    const items = (wishlist?.items || [])
+      .filter(item => item.product) // Safety against broken relations
+      .map(item => ({
+        id: item.id,
+        productId: item.productId,
+        name: item.product.name,
+        price: item.product.price,
+        originalPrice: item.product.originalPrice,
+        image: item.product.images.find(img => img.isPrimary)?.url || item.product.images[0]?.url,
+        slug: item.product.slug
+      }));
 
     res.json(items);
   } catch (error) {
+    console.error("WISHLIST_FETCH_ERROR:", error);
     res.status(500).json({ error: "Failed to fetch wishlist" });
   }
 });
@@ -855,6 +1440,9 @@ app.post('/api/wishlist/toggle', requireAuth, async (req: any, res) => {
     });
 
     if (!wishlist) {
+      const userExists = await prisma.user.findUnique({ where: { id: req.user.userId } });
+      if (!userExists) return res.status(401).json({ error: "User no longer exists. Please logout and login again." });
+
       wishlist = await prisma.wishlist.create({
         data: { userId: req.user.userId }
       });
@@ -1007,6 +1595,7 @@ app.post('/api/checkout/place-order', async (req, res) => {
     res.status(500).json({ error: "Checkout failed" });
   }
 });
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

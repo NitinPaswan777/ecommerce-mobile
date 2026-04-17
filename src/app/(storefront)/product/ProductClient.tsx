@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Star, ChevronRight, Share, Heart, ShoppingBag, Play, X, MessageSquare, Truck, MapPin, Zap } from "lucide-react";
+import { Star, ChevronRight, Share, Heart, ShoppingBag, Play, X, MessageSquare, Truck, MapPin, Zap, Bell } from "lucide-react";
 import Link from "next/link";
 import WishlistButton from "@/components/WishlistButton";
 import Image from "next/image";
@@ -31,14 +31,35 @@ export default function ProductClient({ product }: { product: any }) {
   
   const { data: session, status } = useSession();
 
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const images = product?.images?.length > 0 
     ? product.images.map((img: any) => img.url) 
     : [
         "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=800&auto=format&fit=crop",
         "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop"
       ];
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const index = Math.round(scrollLeft / clientWidth);
+      setActiveImageIndex(index);
+    }
+  };
+
+  const scrollToIndex = (index: number) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        left: index * scrollRef.current.clientWidth,
+        behavior: 'smooth'
+      });
+    }
+  };
+
       
-  const videoUrl = product?.videoUrl || "https://video101.mfrcdn.com/invoice-file/1973422_324192_IN_3cbabf595a8b0b1519dc58f2de743b85_vql.mp4_r540_crf30_h264.mp4";
+  const videoUrl = product?.videoUrl;
 
   let discountPercentage = 0;
   if (product.originalPrice && product.originalPrice > product.price) {
@@ -212,7 +233,12 @@ export default function ProductClient({ product }: { product: any }) {
       
       {/* Image Gallery (Snap Scroll) */}
       <div className="w-full relative bg-gray-100 overflow-hidden">
-        <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {images.map((url: string, i: number) => (
             <div key={i} className="w-full shrink-0 snap-center relative aspect-[3/4]">
               <Image src={url} alt={product.name} fill className="object-cover" priority={i === 0} />
@@ -237,12 +263,54 @@ export default function ProductClient({ product }: { product: any }) {
         {/* Carousel Indicators */}
         <div className="flex gap-1.5 items-center absolute bottom-3 left-1/2 -translate-x-1/2 mb-1 z-10">
           {images.map((_: any, i: number) => (
-            <div key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}></div>
+            <div 
+              key={i} 
+              onClick={() => scrollToIndex(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${i === activeImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+            ></div>
           ))}
         </div>
 
+        {/* Desktop Navigation Arrows (Visible only if multiple images) */}
+        {images.length > 1 && (
+          <div className="hidden md:block">
+            <button 
+              onClick={() => scrollToIndex(activeImageIndex - 1)}
+              disabled={activeImageIndex === 0}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center text-black disabled:hidden z-20"
+            >
+              <ChevronRight className="rotate-180" />
+            </button>
+            <button 
+              onClick={() => scrollToIndex(activeImageIndex + 1)}
+              disabled={activeImageIndex === images.length - 1}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center text-black disabled:hidden z-20"
+            >
+              <ChevronRight />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnail Strip (Thumb Scrolling) */}
+      {images.length > 1 && (
+        <div className="px-4 mt-2">
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+                {images.map((url: string, i: number) => (
+                    <button 
+                        key={i}
+                        onClick={() => scrollToIndex(i)}
+                        className={`w-14 h-18 rounded-md overflow-hidden shrink-0 transition-all duration-300 border-2 ${i === activeImageIndex ? 'border-black scale-105' : 'border-transparent opacity-60'}`}
+                    >
+                        <Image src={url} alt={`thumb-${i}`} width={56} height={72} className="w-full h-full object-cover" />
+                    </button>
+                ))}
+            </div>
+        </div>
+      )}
+
         {/* Floating Draggable Video Banner */}
-        {!isVideoOpen && isPipVisible && (
+        {videoUrl && !isVideoOpen && isPipVisible && (
           <motion.div 
             drag
             dragConstraints={{ left: -200, right: 0, top: 0, bottom: 300 }}
@@ -272,23 +340,25 @@ export default function ProductClient({ product }: { product: any }) {
             </button>
           </motion.div>
         )}
-      </div>
+
 
       {/* Flash Sale Banner */}
       <div className="bg-gradient-to-r from-[#FFC107] to-[#FF9800] text-black flex justify-between items-center px-4 py-2 relative overflow-hidden">
         <h3 className="font-extrabold tracking-wide text-sm z-10">FLASH SALE</h3>
-        
-        {/* Lightning decorative overlay */}
-        <div className="absolute right-[40%] top-0 bottom-0 w-8 bg-black -skew-x-[20deg] z-0 opacity-10"></div>
         
         <div className="flex items-center gap-1 font-bold text-sm tracking-widest z-10">
           <span>05h</span> : <span>59m</span> : <span>31s</span>
         </div>
       </div>
 
-      {/* Product Information */}
       <div className="px-4 py-4 flex flex-col gap-1.5">
-        <h1 className="text-[17px] text-gray-800 tracking-tight font-medium leading-tight">{product.name}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-[17px] text-gray-800 tracking-tight font-medium leading-tight">{product.name}</h1>
+          {product.inventory <= 0 && (
+            <span className="bg-red-50 text-[#FF3B30] text-[10px] font-bold px-2 py-0.5 rounded border border-red-100 uppercase tracking-widest">Out of Stock</span>
+          )}
+        </div>
+
         
         <div className="flex items-end gap-2 mt-1">
           <span className="text-2xl font-bold text-[#FF3B30]">₹{product.price.toLocaleString('en-IN')}</span>
@@ -444,22 +514,65 @@ export default function ProductClient({ product }: { product: any }) {
           <MessageSquare className="w-7 h-7 stroke-[1.5]" />
           <div className="absolute top-1 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
         </button>
-        {isAdded ? (
-          <Link 
-            href="/cart"
-            className="flex-1 bg-black text-white rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-all shadow active:scale-95"
-          >
-            ADDED (GO TO CART)
-          </Link>
+        {(product.inventory !== undefined && product.inventory !== null && product.inventory > 0) ? (
+          isAdded ? (
+            <Link 
+              href="/cart"
+              className="flex-1 bg-black text-white rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-all shadow active:scale-95"
+            >
+              ADDED (GO TO CART)
+            </Link>
+          ) : (
+            <button 
+              onClick={addToBag}
+              disabled={isAdding}
+              className="flex-1 bg-[#FFB300] hover:bg-[#FFA000] text-black rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-colors shadow disabled:opacity-70 disabled:cursor-wait"
+            >
+               {isAdding ? 'ADDING...' : 'ADD TO BAG'}
+            </button>
+          )
         ) : (
           <button 
-            onClick={addToBag}
-            disabled={isAdding}
-            className="flex-1 bg-[#FFB300] hover:bg-[#FFA000] text-black rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-colors shadow disabled:opacity-70 disabled:cursor-wait"
+            onClick={async () => {
+              const userEmail = session?.user?.email;
+              const emailToUse = userEmail || window.prompt("Enter your email to get notified when back in stock:", "");
+              
+              if (emailToUse && emailToUse.includes('@')) {
+                const loadingToast = toast.loading("Submitting request...", {
+                  style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
+                });
+
+                try {
+                  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/notifications/request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailToUse, productId: product.id })
+                  });
+
+                  if (res.ok) {
+                    toast.success("We'll notify you soon!", {
+                      id: loadingToast,
+                      icon: '🔔',
+                      style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
+                    });
+                  } else {
+                    throw new Error();
+                  }
+                } catch (e) {
+                  toast.error("Failed to submit. Please try again.", {
+                    id: loadingToast,
+                    style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
+                  });
+                }
+              }
+            }}
+            className="flex-1 bg-white hover:bg-gray-50 text-black border-2 border-black rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-all active:scale-95 shadow-sm"
           >
-             {isAdding ? 'ADDING...' : 'ADD TO BAG'}
+             <Bell className="w-4 h-4" />
+             NOTIFY ME
           </button>
         )}
+
       </div>
 
       {/* You May Also Like Section */}

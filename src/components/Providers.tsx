@@ -1,11 +1,14 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { SiteSettingsProvider } from "./SiteSettingsProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      {children}
+      <SiteSettingsProvider>
+        {children}
+      </SiteSettingsProvider>
     </SessionProvider>
   );
 }

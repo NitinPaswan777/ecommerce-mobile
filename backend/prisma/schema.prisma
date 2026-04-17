@@ -7,34 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
-// NextAuth Tables
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  phone         String?   @unique
-  image         String?
-  password      String?
-  role          Role      @default(USER)
-  accounts      Account[]
-  sessions      Session[]
-  cart          Cart?
-  wishlist      Wishlist?
-  orders        Order[]
-  addresses     Address[]
-  gender        String?
-  dob           DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -48,63 +20,189 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId], map: "provider_account_unique_idx")
+  @@index([userId])
+  @@map("account")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  name      String
+  phone     String
+  pincode   String
+  city      String
+  state     String
+  flatNo    String
+  street    String
+  isDefault Boolean @default(false)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders    Order[]
+
+  @@index([userId])
+  @@map("address")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  @@unique([identifier, token])
+model Banner {
+  id         String  @id @default(cuid())
+  title      String
+  subtitle   String?
+  buttonText String?
+  link       String
+  imageUrl   String
+  position   String
+  isActive   Boolean @default(true)
+  showOverlay Boolean @default(true)
+  @@map("banner")
 }
 
-// E-Commerce Entities
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  updatedAt DateTime   @updatedAt
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  @@map("cart")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  productId String
+  qty       Int     @default(1)
+  color     String?
+  size      String?
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
+  @@index([productId])
+  @@map("cartitem")
+}
+
 model Category {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  image       String?
-  isFeatured  Boolean   @default(false)
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  image      String?
+  isFeatured Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  products   Product[]
+  @@map("category")
+}
+
+model Color {
+  id        String  @id @default(cuid())
+  name      String
+  hexCode   String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("color")
+}
+
+model FlashSale {
+  id        String   @id @default(cuid())
+  productId String
+  dealPrice Float
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("flashsale")
+}
+
+model NotificationRequest {
+  id        String   @id @default(cuid())
+  email     String
+  productId String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("notificationrequest")
+}
+
+model Order {
+  id                   String      @id @default(cuid())
+  userId               String?
+  totalAmount          Float
+  paymentMethod        String
+  status               String
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  addressId            String?
+  guestAddress         String?
+  guestEmail           String?
+  guestName            String?
+  guestPhone           String?
+  awbCode              String?
+  courierName          String?
+  shiprocketOrderId    String?
+  shiprocketShipmentId String?
+  trackingUrl          String?
+  address              Address?    @relation(fields: [addressId], references: [id])
+  user                 User?       @relation(fields: [userId], references: [id])
+  items                OrderItem[]
+
+  @@index([addressId])
+  @@index([userId])
+  @@map("order")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  qty       Int
+  price     Float
+  color     String?
+  size      String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("orderitem")
 }
 
 model Product {
-  id             String         @id @default(cuid())
-  name           String
-  slug           String         @unique
-  description    String?        @db.Text
-  price          Float
-  originalPrice  Float?
-  fastDelivery   Boolean        @default(false)
-  tag            String?
-  videoUrl       String?
-  getItForText   String?        // Dynamic green text promo
-  categoryId     String
-  category       Category       @relation(fields: [categoryId], references: [id])
-  colors         Color[]
-  sizes          Size[]
-  images         ProductImage[]
-  inventory      Int            @default(0)
+  id                  String                @id @default(cuid())
+  name                String
+  slug                String                @unique
+  description         String?               @db.Text
+  price               Float
+  originalPrice       Float?
+  fastDelivery        Boolean               @default(false)
+  tag                 String?
+  getItForText        String?
+  categoryId          String
+  inventory           Int                   @default(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  videoUrl            String?
+  sku                 String?               @unique
+  listedFor           String?
   
-  cartItems      CartItem[]
-  wishlistItems  WishlistItem[]
-  orderItems     OrderItem[]
-  flashSales     FlashSale[]
+  cartItems           CartItem[]
+  colors              Color[]
+  flashSale           FlashSale[]
+  notificationRequests NotificationRequest[]
+  orderItems          OrderItem[]
+  category            Category              @relation(fields: [categoryId], references: [id])
+  images              ProductImage[]
+  sizes               Size[]
+  wishlistItems       WishlistItem[]
+  homeSections        HomeSection[]
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@index([categoryId])
+  @@map("product")
 }
 
 model ProductImage {
@@ -114,139 +212,117 @@ model ProductImage {
   isPrimary Boolean @default(false)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("productimage")
 }
 
-model Color {
-  id        String  @id @default(cuid())
-  name      String
-  hexCode   String
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
 }
 
 model Size {
   id        String  @id @default(cuid())
-  name      String  // XS, S, M, L, XL
+  name      String
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
 
-// UI Configuration
-model Banner {
-  id          String   @id @default(cuid())
-  title       String
-  subtitle    String?
-  buttonText  String?
-  link        String
-  imageUrl    String
-  position    String   // e.g. "HERO_1", "HERO_2", "CATEGORY_TOP"
-  isActive    Boolean  @default(true)
+  @@index([productId])
+  @@map("size")
 }
 
 model SpecialOffer {
-  id          String   @id @default(cuid())
-  title       String
-  priceText   String
-  badgeText   String?
-  imageUrl    String
-  link        String
-  isActive    Boolean  @default(true)
-}
-
-model FlashSale {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  dealPrice Float
-  endsAt    DateTime
-  isActive  Boolean  @default(true)
-}
-
-// User interactions
-model Cart {
-  id        String     @id @default(cuid())
-  userId    String?     @unique
-  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-  updatedAt DateTime   @updatedAt
-}
-
-model CartItem {
   id        String  @id @default(cuid())
-  cartId    String
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  qty       Int     @default(1)
-  color     String?
-  size      String?
+  title     String
+  priceText String
+  badgeText String?
+  imageUrl  String
+  link      String
+  isActive  Boolean @default(true)
+  @@map("specialoffer")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  dob           DateTime?
+  gender        String?
+  accounts      Account[]
+  addresses     Address[]
+  cart          Cart?
+  orders        Order[]
+  sessions      Session[]
+  wishlist      Wishlist?
+  @@map("user")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtoken")
 }
 
 model Wishlist {
-  id        String         @id @default(cuid())
-  userId    String         @unique
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     WishlistItem[]
-  updatedAt DateTime       @updatedAt
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items        WishlistItem[]
+  @@map("wishlist")
 }
 
 model WishlistItem {
-  id        String  @id @default(cuid())
+  id         String   @id @default(cuid())
   wishlistId String
-  wishlist  Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([wishlistId])
+  @@map("wishlistitem")
 }
 
-model Address {
-  id        String  @id @default(cuid())
-  userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  phone     String
-  pincode   String
-  city      String
-  state     String
-  flatNo    String
-  street    String
-  isDefault Boolean @default(false)
-  orders    Order[]
+enum UserRole {
+  USER
+  ADMIN
+  @@map("user_role")
 }
 
-model Order {
-  id            String      @id @default(cuid())
-  userId        String?
-  user          User?        @relation(fields: [userId], references: [id])
-  guestEmail    String?
-  guestPhone    String?
-  guestName     String?
-  guestAddress  String?
-  totalAmount   Float
-  paymentMethod String      // COD, RAZORPAY
-  status        String      // PENDING, PAID, SHIPPED, DELIVERED, CANCELLED
-  items         OrderItem[]
-  addressId     String?
-  address       Address?    @relation(fields: [addressId], references: [id])
-  
-  // Shiprocket Tracking Fields
-  shiprocketOrderId     String?
-  shiprocketShipmentId  String?
-  awbCode               String?
-  courierName           String?
-  trackingUrl           String?
-
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+model SiteConfig {
+  id             String   @id @default("global")
+  logoUrl        String?
+  bannerUrl      String?
+  bannerType     String?   // "image" | "video" | "gif"
+  siteName       String?   @default("Savana Style")
+  activeTags     String?   @default("Trendy,New Arrival")
+  updatedAt      DateTime @updatedAt
+  @@map("siteconfig")
 }
 
-model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  qty       Int
-  price     Float
-  color     String?
-  size      String?
+model HomeSection {
+  id        String    @id @default(cuid())
+  title     String    @unique
+  position  Int       @default(0)
+  isActive  Boolean   @default(true)
+  products  Product[]
+  @@map("homesection")
 }

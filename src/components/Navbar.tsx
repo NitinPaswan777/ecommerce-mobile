@@ -6,11 +6,13 @@ import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import SearchAutocomplete from "./SearchAutocomplete";
+import { useSiteSettings } from "./SiteSettingsProvider";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { config } = useSiteSettings();
 
   // Hide the global Navbar on account sub-pages as they have their own specialized back-headers
   if (pathname.startsWith('/account')) return null;
@@ -32,8 +34,14 @@ export default function Navbar() {
           </button>
         </div>
 
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-          <h1 className="text-2xl font-bold tracking-tighter">savana</h1>
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center h-10 w-32 overflow-hidden">
+          {config?.logoUrl ? (
+            <img src={config.logoUrl} alt={config.siteName} className="h-full w-full object-contain" />
+          ) : (
+            <h1 className="text-[1.75rem] font-black tracking-[-0.08em] text-black lowercase leading-none">
+              {config?.siteName || "savana"}
+            </h1>
+          )}
         </Link>
 
         <div className="flex items-center gap-2">

@@ -71,7 +71,7 @@ export default function InfiniteProductGrid({ initialProducts }: InfiniteProduct
                     return (
                         <Link href={`/product?id=${item.id}`} key={`${item.id}-${i}`} className="flex flex-col group block">
                             <div className="relative aspect-[3/4] bg-gray-100 w-full overflow-hidden mb-2 rounded-md">
-                                <Image src={displayImg} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                                <Image src={displayImg} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" unoptimized />
                                 
                                 {item.fastDelivery && (
                                     <div className="absolute bottom-2 left-0 bg-white/95 backdrop-blur-sm text-[#111111] text-[11px] font-medium px-2 py-1 flex items-center gap-1 shadow-sm rounded-r-md z-10">
