@@ -33,6 +33,7 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@map("user")
 }
 
 model Account {
@@ -51,6 +52,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
+  @@map("account")
 }
 
 model Session {
@@ -59,6 +61,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("session")
 }
 
 model VerificationToken {
@@ -66,6 +69,7 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
   @@unique([identifier, token])
+  @@map("verification_token")
 }
 
 // E-Commerce Entities
@@ -78,6 +82,7 @@ model Category {
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  @@map("category")
 }
 
 model Product {
@@ -105,6 +110,7 @@ model Product {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  @@map("product")
 }
 
 model ProductImage {
@@ -160,6 +166,7 @@ model FlashSale {
   dealPrice Float
   endsAt    DateTime
   isActive  Boolean  @default(true)
+  @@map("flash_sale")
 }
 
 // User interactions
@@ -169,6 +176,7 @@ model Cart {
   user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
   updatedAt DateTime   @updatedAt
+  @@map("cart")
 }
 
 model CartItem {
@@ -188,6 +196,7 @@ model Wishlist {
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     WishlistItem[]
   updatedAt DateTime       @updatedAt
+  @@map("wishlist")
 }
 
 model WishlistItem {
@@ -196,6 +205,7 @@ model WishlistItem {
   wishlist  Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@map("wishlist_item")
 }
 
 model Address {
@@ -211,6 +221,7 @@ model Address {
   street    String
   isDefault Boolean @default(false)
   orders    Order[]
+  @@map("address")
 }
 
 model Order {
@@ -237,6 +248,7 @@ model Order {
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  @@map("order")
 }
 
 model OrderItem {
