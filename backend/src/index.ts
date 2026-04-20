@@ -1658,9 +1658,12 @@ app.post('/api/checkout/place-order', async (req, res) => {
 
 
 const PORT = process.env.PORT || 5000;
+const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || `http://localhost:${PORT}`;
+
 app.listen(PORT, () => {
   console.log(`\n======================================`);
   console.log(`🚀 Secure Node.js Backend Started!`);
-  console.log(`📡 Listening on: http://localhost:${PORT}`);
+  console.log(`📡 URL: ${backendUrl}`);
+  console.log(`📡 PORT: ${PORT}`);
   console.log(`======================================\n`);
 });
