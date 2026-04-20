@@ -958,7 +958,11 @@ app.get('/api/feed/home', cacheMiddleware(0), async (req, res) => {
       include: {
         products: {
           take: 12,
-          include: { images: true }
+          include: {
+            product: {
+              include: { images: true }
+            }
+          }
         }
       },
       orderBy: { position: 'asc' }
@@ -972,13 +976,16 @@ app.get('/api/feed/home', cacheMiddleware(0), async (req, res) => {
         include: { images: true }
       });
 
+      // Extract actual products from the join table
+      const manualProducts = section.products.map(hp => hp.product);
+      
       // Merge and remove duplicates (by ID)
-      const existingIds = new Set(section.products.map(p => p.id));
+      const existingIds = new Set(manualProducts.map(p => p.id));
       const newProducts = taggedProducts.filter(p => !existingIds.has(p.id));
 
       return {
         ...section,
-        products: [...section.products, ...newProducts].slice(0, 12)
+        products: [...manualProducts, ...newProducts].slice(0, 12)
       };
     }));
 
