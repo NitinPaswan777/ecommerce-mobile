@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000") + "/api";
 
 export async function fetchAdminStats() {
     const res = await fetch(`${API_URL}/admin/stats`);
