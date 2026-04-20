@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('--- Phase 1: Cleaning Database ---');
+  await prisma.productVariant.deleteMany({});
   await prisma.cartItem.deleteMany({});
   await prisma.orderItem.deleteMany({});
   await prisma.wishlistItem.deleteMany({});
@@ -43,7 +44,7 @@ async function main() {
     categories.push({ ...created, type: c.type });
   }
 
-  console.log('--- Phase 4: Generating 500+ Products with Section Tagging ---');
+  console.log('--- Phase 4: Generating 500+ Products with Variants & Grouping ---');
   
   const imgIds = [
     "1515886657613-9f3515b0c78f", "1525507119028-ed4c629a60a3", "1492707892479-7bc8d5a4ee93",
@@ -66,46 +67,53 @@ async function main() {
     const slug = `${adj.toLowerCase()}-${noun.toLowerCase()}-${i}`;
     
     const cat = categories[i % categories.length];
-    const img1 = imgIds[i % imgIds.length];
-    const img2 = imgIds[(i + 1) % imgIds.length];
+    const img1 = `https://images.unsplash.com/photo-${imgIds[i % imgIds.length]}?q=80&w=800&auto=format&fit=crop`;
+    const img2 = `https://images.unsplash.com/photo-${imgIds[(i + 1) % imgIds.length]}?q=80&w=800&auto=format&fit=crop`;
 
     // Assign to a section if quota not met
     let tag = null;
     for (const title of sectionTitles) {
-      if (sectionCounter[title] < 40) {
+      if (sectionCounter[title] < 45) {
         tag = title;
         sectionCounter[title]++;
         break;
       }
     }
 
+    const price = 1500 + (Math.random() * 8000);
+    const colors = ["Red", "Blue", "Black"];
+    const sizes = ["S", "M", "L"];
+
     await prisma.product.create({
       data: {
         name,
         slug,
         description: `Experience the peak of contemporary design with this ${name}. Crafted for the style-conscious individual.`,
-        price: 1500 + (Math.random() * 8000),
-        originalPrice: 3000 + (Math.random() * 10000),
+        price: price,
+        originalPrice: price * 1.5,
         categoryId: cat.id,
         listedFor: cat.type,
-        inventory: 200,
-        tag: tag, // This tag links it to the HomeSection
+        inventory: 1000, // Total inventory
+        tag: tag,
         fastDelivery: i % 3 === 0,
-        getItForText: i % 4 === 0 ? "Get it for ₹999 on APP" : null,
         images: {
-          create: [
-            { url: `https://images.unsplash.com/photo-${img1}?q=80&w=800&auto=format&fit=crop`, isPrimary: true },
-            { url: `https://images.unsplash.com/photo-${img2}?q=80&w=800&auto=format&fit=crop`, isPrimary: false }
-          ]
+          create: [{ url: img1, isPrimary: true }, { url: img2, isPrimary: false }]
         },
         colors: {
-           create: [
-             { name: "Black", hexCode: "#000000" },
-             { name: "White", hexCode: "#ffffff" }
-           ]
+           create: colors.map(c => ({ name: c, hexCode: c === 'Red' ? '#ff0000' : c === 'Blue' ? '#0000ff' : '#000000' }))
         },
         sizes: {
-           create: [ { name: "S" }, { name: "M" }, { name: "L" } ]
+           create: sizes.map(s => ({ name: s }))
+        },
+        variants: {
+          create: colors.flatMap(color => sizes.map(size => ({
+            color,
+            size,
+            sku: `${slug}-${color.toUpperCase()}-${size}`,
+            price: price,
+            inventory: 50,
+            images: color === 'Red' ? img1 : img2 // Simulate color specific images
+          })))
         }
       }
     });

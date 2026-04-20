@@ -281,8 +281,8 @@ export default function Home() {
           <div className="flex overflow-x-auto gap-5 px-6 pb-6 hide-scrollbar flex-nowrap">
             {hotCategories.map((cat: any, i: number) => (
               <Link href={`/category?slug=${cat.slug}`} key={i} className="flex flex-col items-center gap-3 shrink-0 group">
-                <div style={{ width: '80px', height: '80px', position: 'relative', borderRadius: '50%', overflow: 'hidden', background: 'white', border: '1.5px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-                  <div style={{ position: 'absolute', inset: '8px' }}><div className="w-full h-full relative"><Image src={cat.image || FashionPlaceholder} alt={cat.name} fill className="object-contain" unoptimized /></div></div>
+                <div style={{ width: '85px', height: '85px', position: 'relative', borderRadius: '50%', overflow: 'hidden', background: '#f8fafc', border: '1.5px solid #f1f5f9', boxShadow: '0 8px 16px rgba(0,0,0,0.04)' }}>
+                  <Image src={cat.image || FashionPlaceholder} alt={cat.name} fill className="object-cover" unoptimized />
                 </div>
                 <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter text-center">{cat.name}</span>
               </Link>
