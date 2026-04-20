@@ -31,7 +31,9 @@ app.use(cors({
     'http://instalook.in',
     'https://instalook.in',
     'http://www.instalook.in',
-    'https://www.instalook.in'
+    'https://www.instalook.in',
+    'http://admin.instalook.in',
+    'https://admin.instalook.in'
   ],
   credentials: true
 }));
