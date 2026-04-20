@@ -419,7 +419,7 @@ const diskUpload = multer({ storage: diskStorage });
 
 app.post('/api/admin/upload', diskUpload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+  const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
   const url = `${backendUrl}/uploads/${req.file.filename}`;
   res.json({ url });
 });
