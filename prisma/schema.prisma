@@ -191,6 +191,17 @@ model SiteConfig {
   @@map("site_config")
 }
 
+model SpecialOffer {
+  id        String  @id @default(cuid())
+  title     String
+  priceText String
+  badgeText String?
+  imageUrl  String
+  link      String
+  isActive  Boolean @default(true)
+  @@map("special_offer")
+}
+
 model HomeSection {
   id        String    @id @default(cuid())
   title     String    @unique
