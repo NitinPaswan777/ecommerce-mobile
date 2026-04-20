@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**.instalook.com',
+        hostname: '**.instalook.in',
       },
       {
         protocol: 'https',
