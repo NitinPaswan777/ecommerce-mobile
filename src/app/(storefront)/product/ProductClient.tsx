@@ -163,8 +163,9 @@ export default function ProductClient({ product }: { product: any }) {
 
     setIsChecking(true);
     setError("");
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
     try {
-      const res = await fetch(`http://localhost:5000/api/shiprocket/serviceability?pincode=${code}`);
+      const res = await fetch(`${backendUrl}/api/shiprocket/serviceability?pincode=${code}`);
       if (res.ok) {
         setDeliveryData(await res.json());
       } else {
