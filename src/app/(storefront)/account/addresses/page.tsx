@@ -42,7 +42,8 @@ export default function AddressesPage() {
   const fetchAddresses = async () => {
     const token = localStorage.getItem('savana_token');
     try {
-      const res = await fetch('http://localhost:5000/api/user/addresses', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/user/addresses`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -69,7 +70,8 @@ export default function AddressesPage() {
     setIsPinChecking(true);
     setPinError("");
     try {
-      const res = await fetch(`http://localhost:5000/api/shiprocket/serviceability?pincode=${pin}`);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/shiprocket/serviceability?pincode=${pin}`);
       if (res.ok) {
         setIsPinValid(true);
       } else {
@@ -91,7 +93,8 @@ export default function AddressesPage() {
     }
     const token = localStorage.getItem('savana_token');
     try {
-      const res = await fetch('http://localhost:5000/api/user/addresses', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/user/addresses`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -113,7 +116,8 @@ export default function AddressesPage() {
   const handleDelete = async (id: string) => {
     const token = localStorage.getItem('savana_token');
     try {
-      await fetch(`http://localhost:5000/api/user/addresses/${id}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/user/addresses/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -126,7 +130,8 @@ export default function AddressesPage() {
   const handleSetDefault = async (id: string) => {
     const token = localStorage.getItem('savana_token');
     try {
-      await fetch(`http://localhost:5000/api/user/addresses/${id}/default`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/user/addresses/${id}/default`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });

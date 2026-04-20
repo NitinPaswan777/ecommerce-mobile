@@ -69,7 +69,8 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     const token = localStorage.getItem('savana_token');
     try {
-      const res = await fetch('http://localhost:5000/api/user/profile', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -104,7 +105,8 @@ export default function ProfilePage() {
     setIsSaving(true);
     const token = localStorage.getItem('savana_token');
     try {
-      await fetch('http://localhost:5000/api/user/profile', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      await fetch(`${backendUrl}/api/user/profile`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

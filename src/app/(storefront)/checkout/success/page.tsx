@@ -21,20 +21,26 @@ export default function OrderSuccessPage() {
     const fetchOrderEtd = async () => {
       if (!orderId) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${orderId}`);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const res = await fetch(`${backendUrl}/api/orders/${orderId}`);
         if (res.ok) {
-          const order = await res.json();
-          const pincode = order.address?.pincode || order.guestAddress?.match(/\d{6}/)?.[0];
+          const data = await res.json();
+          setOrder(data);
+          
+          // Pincode fetch
+          const pincode = data.address?.pincode || data.guestAddress?.split(',').pop()?.trim();
           if (pincode) {
-            const srRes = await fetch(`http://localhost:5000/api/shiprocket/serviceability?pincode=${pincode}`);
-            if (srRes.ok) {
-              const srData = await srRes.json();
-              setEtd(srData.etd);
-            }
+             const srRes = await fetch(`${backendUrl}/api/shiprocket/serviceability?pincode=${pincode}`);
+             if (srRes.ok) {
+               const srData = await srRes.json();
+               setEtd(srData.etd);
+             }
           }
         }
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchOrderEtd();

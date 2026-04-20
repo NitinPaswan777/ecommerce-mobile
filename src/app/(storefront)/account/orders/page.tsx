@@ -27,8 +27,8 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     const token = localStorage.getItem('savana_token');
     try {
-      // For now, if no orders API exists, we'll show a premium empty state or mock data
-      const res = await fetch('http://localhost:5000/api/user/orders', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/user/orders`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -50,7 +50,8 @@ export default function OrdersPage() {
     setSelectedTrackOrder(orderId);
     setIsTrackLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/shiprocket/track/${orderId}`);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/shiprocket/track/${orderId}`);
       if (res.ok) {
         const data = await res.json();
         setTrackingData(data);
@@ -87,8 +88,9 @@ export default function OrdersPage() {
     if (!confirm("Are you sure you want to cancel this order?")) return;
     const token = localStorage.getItem('savana_token');
     try {
-      const res = await fetch(`http://localhost:5000/api/user/orders/${orderId}/cancel`, {
-        method: 'POST',
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/user/orders/${orderId}/cancel`, {
+        method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

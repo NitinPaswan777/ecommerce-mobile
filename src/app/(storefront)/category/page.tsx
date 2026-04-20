@@ -7,22 +7,23 @@ export default async function Category(props: { searchParams: Promise<{ slug?: s
   const searchParams = await props.searchParams;
   const currentSlug = searchParams?.slug?.toLowerCase() || '';
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
   let categories = [];
   let products = [];
   
   try {
-    // We cache categories (they don't change often)
-    const catsRes = await fetch('http://localhost:5000/api/categories', { next: { revalidate: 3600 } });
+    // Fetch Categories for Sidebar
+    const catsRes = await fetch(`${backendUrl}/api/categories`, { next: { revalidate: 3600 } });
     if (catsRes.ok) categories = await catsRes.json();
   } catch(e) { console.error(e) }
 
   try {
-    // Dynamic products based on URL query
-    const url = currentSlug 
-      ? `http://localhost:5000/api/products?categorySlug=${currentSlug}` 
-      : `http://localhost:5000/api/products`;
+    // Fetch Products based on selected category
+    const productsUrl = currentSlug 
+      ? `${backendUrl}/api/products?categorySlug=${currentSlug}` 
+      : `${backendUrl}/api/products`;
       
-    const prodsRes = await fetch(url, { cache: 'no-store' });
+    const prodsRes = await fetch(productsUrl, { cache: 'no-store' });
     if (prodsRes.ok) products = await prodsRes.json();
   } catch(e) { console.error(e) }
 

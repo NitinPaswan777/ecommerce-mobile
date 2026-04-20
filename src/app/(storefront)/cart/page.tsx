@@ -34,7 +34,8 @@ export default function CartPage() {
     const user = token ? JSON.parse(localStorage.getItem('savana_user') || '{}') : null;
     
     try {
-      const url = new URL('http://localhost:5000/api/cart');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const url = new URL(`${backendUrl}/api/cart`);
       if (user?.id) url.searchParams.append('userId', user.id);
       if (guestId) url.searchParams.append('guestId', guestId);
       
@@ -69,7 +70,8 @@ export default function CartPage() {
      
      // Server Sync
      try {
-       await fetch(`http://localhost:5000/api/cart/remove/${id}`, { method: 'DELETE' });
+       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+       await fetch(`${backendUrl}/api/cart/remove/${id}`, { method: 'DELETE' });
      } catch (e) {
        console.error("Failed to sync removal", e);
      }
@@ -85,7 +87,8 @@ export default function CartPage() {
 
     // Server Sync
     try {
-       await fetch('http://localhost:5000/api/cart/update-qty', {
+       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+       await fetch(`${backendUrl}/api/cart/update-qty`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ itemId: id, qty: newQty })
@@ -100,7 +103,8 @@ export default function CartPage() {
 
   const handleApplyCoupon = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/coupons/validate', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: coupon, cartTotal: total })
