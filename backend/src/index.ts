@@ -21,10 +21,10 @@ syncSearchIndex();
 // Security and parser middleware - MUST BE AT THE TOP
 app.use(cors({
   origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://localhost:3002', 
-    'http://localhost:4000', 
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:4000',
     'http://localhost:5173',
     'http://api.instalook.in',
     'https://api.instalook.in',
@@ -95,8 +95,8 @@ app.get('/api/admin/orders', async (req, res) => {
 
 app.post('/api/admin/products', async (req, res) => {
   try {
-    const { 
-      name, description, price, originalPrice, 
+    const {
+      name, description, price, originalPrice,
       sku, inventory, categoryId, tag, videoUrl,
       images, colors, sizes, fastDelivery, listedFor, variants
     } = req.body;
@@ -153,9 +153,9 @@ app.post('/api/admin/products', async (req, res) => {
 app.put('/api/admin/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
+    const {
       name, description, price, originalPrice, sku, inventory,
-      categoryId, tag, videoUrl, images, colors, sizes, fastDelivery, 
+      categoryId, tag, videoUrl, images, colors, sizes, fastDelivery,
       listedFor, variants
     } = req.body;
 
@@ -216,14 +216,14 @@ app.put('/api/admin/products/:id', async (req, res) => {
 app.delete('/api/admin/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Cascading delete manually if not set in DB
     await prisma.productImage.deleteMany({ where: { productId: id } });
     await prisma.color.deleteMany({ where: { productId: id } });
     await prisma.size.deleteMany({ where: { productId: id } });
     await prisma.cartItem.deleteMany({ where: { productId: id } });
     await prisma.wishlistItem.deleteMany({ where: { productId: id } });
-    
+
     await prisma.product.delete({
       where: { id }
     });
@@ -250,8 +250,8 @@ app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => 
     const results = [];
     for (const row of data as any[]) {
       try {
-        const { 
-          name, description, price, originalPrice, sku, inventory, 
+        const {
+          name, description, price, originalPrice, sku, inventory,
           categoryName, tag, videoUrl, images, colors, sizes, fastDelivery,
           listedFor
         } = row;
@@ -259,14 +259,14 @@ app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => 
         if (!name || !price || !categoryName) continue;
 
         let category = await prisma.category.findFirst({
-           where: { name: categoryName }
+          where: { name: categoryName }
         });
 
         if (!category) {
           category = await prisma.category.create({
-            data: { 
-              name: categoryName, 
-              slug: categoryName.toLowerCase().replace(/ /g, '-') 
+            data: {
+              name: categoryName,
+              slug: categoryName.toLowerCase().replace(/ /g, '-')
             }
           });
         }
@@ -363,7 +363,7 @@ app.get('/api/admin/categories', async (req, res) => {
 app.get('/api/settings', async (req, res) => {
   try {
     const config = await prisma.siteConfig.findUnique({ where: { id: 'global' } });
-    res.json(config || { siteName: "Savana Style" });
+    res.json(config || { siteName: "instalook Style" });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch settings" });
   }
@@ -379,7 +379,7 @@ app.get('/api/admin/site-config', async (req, res) => {
     });
     if (!config) {
       const defaultConfig = await prisma.siteConfig.create({
-        data: { id: 'global', siteName: 'Savana Style' }
+        data: { id: 'global', siteName: 'instalook Style' }
       });
       return res.json(defaultConfig);
     }
@@ -511,11 +511,11 @@ app.post('/api/admin/banners', async (req, res) => {
   try {
     const { title, subtitle, link, imageUrl, position, isActive, showOverlay } = req.body;
     const banner = await prisma.banner.create({
-      data: { 
-        title: title || "", 
-        subtitle: subtitle || "", 
-        link: link || "/", 
-        imageUrl, 
+      data: {
+        title: title || "",
+        subtitle: subtitle || "",
+        link: link || "/",
+        imageUrl,
         position: position || "HERO",
         isActive: isActive !== undefined ? !!isActive : true,
         showOverlay: showOverlay !== undefined ? !!showOverlay : true
@@ -534,14 +534,14 @@ app.put('/api/admin/banners/:id', async (req, res) => {
     const { title, subtitle, link, imageUrl, position, isActive, showOverlay } = req.body;
     const banner = await prisma.banner.update({
       where: { id },
-      data: { 
-        title, 
-        subtitle, 
-        link, 
-        imageUrl, 
-        position, 
-        isActive: !!isActive, 
-        showOverlay: !!showOverlay 
+      data: {
+        title,
+        subtitle,
+        link,
+        imageUrl,
+        position,
+        isActive: !!isActive,
+        showOverlay: !!showOverlay
       }
     });
     res.json(banner);
@@ -594,10 +594,10 @@ app.put('/api/admin/categories/:id', async (req, res) => {
     const { name, image, isFeatured } = req.body;
     const category = await prisma.category.update({
       where: { id },
-      data: { 
-        name, 
-        image, 
-        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined 
+      data: {
+        name,
+        image,
+        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined
       }
     });
     res.json(category);
@@ -677,11 +677,11 @@ app.get('/api/shiprocket/serviceability', async (req, res) => {
         const fastest = data.data.available_courier_companies.reduce((prev: any, curr: any) => {
           return (new Date(prev.etd) < new Date(curr.etd)) ? prev : curr;
         });
-        return res.json({ 
-          success: true, 
-          etd: fastest.etd, 
+        return res.json({
+          success: true,
+          etd: fastest.etd,
           courier: fastest.courier_name,
-          pincode 
+          pincode
         });
       }
       return res.status(404).json({ success: false, message: "Delivery not available for this location" });
@@ -716,7 +716,7 @@ app.get('/api/shiprocket/track/:orderId', async (req, res) => {
 
     if (shipRes.ok) {
       const data = await shipRes.json();
-      
+
       // Shiprocket keyed response fix: unwrap if keyed by ID
       let finalData = data;
       if (order.shiprocketOrderId && data[order.shiprocketOrderId]) {
@@ -737,7 +737,7 @@ app.get('/api/orders/:id', async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
-      include: { 
+      include: {
         address: true,
         items: { include: { product: { include: { images: true } } } }
       }
@@ -784,12 +784,12 @@ const createShiprocketOrder = async (order: any, items: any[]) => {
         };
       }
     } else if (order.guestAddress) {
-       const parts = order.guestAddress.split(', ');
-       shippingDetails.address = parts[0] || "";
-       shippingDetails.address2 = parts[1] || "";
-       shippingDetails.city = parts[parts.length - 2]?.trim() || "City";
-       shippingDetails.pincode = parts[parts.length - 1]?.trim() || "110001";
-       shippingDetails.state = "Delhi"; // Default to a valid state if not found
+      const parts = order.guestAddress.split(', ');
+      shippingDetails.address = parts[0] || "";
+      shippingDetails.address2 = parts[1] || "";
+      shippingDetails.city = parts[parts.length - 2]?.trim() || "City";
+      shippingDetails.pincode = parts[parts.length - 1]?.trim() || "110001";
+      shippingDetails.state = "Delhi"; // Default to a valid state if not found
     }
 
     const nameParts = shippingDetails.name.trim().split(' ');
@@ -799,7 +799,7 @@ const createShiprocketOrder = async (order: any, items: any[]) => {
     const payload = {
       order_id: order.id,
       order_date: new Date().toISOString().split('T')[0],
-      pickup_location: "Home", 
+      pickup_location: "Home",
       billing_customer_name: firstName,
       billing_last_name: lastName,
       billing_address: shippingDetails.address,
@@ -826,9 +826,9 @@ const createShiprocketOrder = async (order: any, items: any[]) => {
 
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/create/adhoc', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(payload)
     });
@@ -852,11 +852,11 @@ const cache = new Map();
 const cacheMiddleware = (durationInSeconds: number) => (req: any, res: any, next: any) => {
   const key = req.originalUrl;
   const cachedResponse = cache.get(key);
-  
+
   if (cachedResponse && (Date.now() - cachedResponse.timestamp) < durationInSeconds * 1000) {
     return res.json(cachedResponse.data);
   }
-  
+
   res.sendResponse = res.json;
   res.json = (body: any) => {
     cache.set(key, { data: body, timestamp: Date.now() });
@@ -881,7 +881,7 @@ app.get('/api/config', (req, res) => {
 app.get('/api/settings', async (req, res) => {
   try {
     const config = await prisma.siteConfig.findUnique({ where: { id: 'global' } });
-    res.json(config || { siteName: "Savana Style" });
+    res.json(config || { siteName: "instalook Style" });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch settings" });
   }
@@ -891,7 +891,7 @@ app.post('/api/coupons/validate', (req, res) => {
   const { code, cartTotal } = req.body;
   const c = code.toUpperCase();
 
-  if (c === 'SAVANA10') {
+  if (c === 'instalook10') {
     return res.json({ valid: true, discountType: 'PERCENT', value: 10, message: '10% OFF Applied!' });
   }
   if (c === 'HELLO50') {
@@ -917,12 +917,12 @@ app.get('/api/search/full', async (req, res) => {
   try {
     const { q, minPrice, maxPrice, colors, sizes } = req.query;
     const filters = {
-       minPrice: minPrice ? Number(minPrice) : undefined,
-       maxPrice: maxPrice ? Number(maxPrice) : undefined,
-       colors: colors ? (Array.isArray(colors) ? colors : [String(colors)]) : undefined,
-       sizes: sizes ? (Array.isArray(sizes) ? sizes : [String(sizes)]) : undefined
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      colors: colors ? (Array.isArray(colors) ? colors : [String(colors)]) : undefined,
+      sizes: sizes ? (Array.isArray(sizes) ? sizes : [String(sizes)]) : undefined
     } as any;
-    
+
     const results = await searchFull(String(q || ''), filters);
     res.json(results);
   } catch (error) {
@@ -975,7 +975,7 @@ app.get('/api/feed/home', cacheMiddleware(0), async (req, res) => {
       // Merge and remove duplicates (by ID)
       const existingIds = new Set(section.products.map(p => p.id));
       const newProducts = taggedProducts.filter(p => !existingIds.has(p.id));
-      
+
       return {
         ...section,
         products: [...section.products, ...newProducts].slice(0, 12)
@@ -1014,7 +1014,7 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { categorySlug, page = 1, limit = 6 } = req.query;
-    
+
     let whereClause = {};
     if (categorySlug) {
       whereClause = { category: { slug: String(categorySlug) } };
@@ -1041,9 +1041,9 @@ app.get('/api/products/:id', async (req, res) => {
       where: { id: String(id) },
       include: { images: true, colors: true, sizes: true, variants: true }
     });
-    
+
     if (!product) return res.status(404).json({ error: "Product not found" });
-    
+
     res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch single product" });
@@ -1054,7 +1054,7 @@ app.get('/api/products/:id', async (req, res) => {
 // SECURE OTP / LOGIN MECHANISMS
 // ----------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_savana_jwt_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_instalook_jwt_key_2026';
 
 import nodemailer from 'nodemailer';
 
@@ -1084,21 +1084,21 @@ app.post('/api/auth/send-otp', async (req, res) => {
       data: {
         identifier: identifier,
         token: otp,
-        expires: new Date(Date.now() + 1000 * 60 * 10) 
+        expires: new Date(Date.now() + 1000 * 60 * 10)
       }
     });
 
     // If identifier is an email and SMTP is configured, send the mail
     if (identifier.includes('@') && process.env.SMTP_USER) {
       await transporter.sendMail({
-        from: `"Savana Auth" <${process.env.SMTP_USER}>`,
+        from: `"instalook Auth" <${process.env.SMTP_USER}>`,
         to: identifier,
-        subject: "Your Savana Verification Code",
+        subject: "Your instalook Verification Code",
         text: `Your secure login code is: ${otp}. It expires in 10 minutes.`,
         html: `
           <div style="font-family: sans-serif; max-width: 400px; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #111; tracking-tight: -0.05em;">savana</h2>
-            <p style="font-size: 14px; color: #555;">Use the code below to sign in securely to your Savana account.</p>
+            <h2 style="color: #111; tracking-tight: -0.05em;">instalook</h2>
+            <p style="font-size: 14px; color: #555;">Use the code below to sign in securely to your instalook account.</p>
             <div style="background: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0;">
               ${otp}
             </div>
@@ -1110,9 +1110,9 @@ app.post('/api/auth/send-otp', async (req, res) => {
     }
 
     // Fallback for mobile or missing SMTP (simulated for dev)
-    return res.status(200).json({ 
-      message: "OTP generated successfully!", 
-      simulatedOtp: (process.env.NODE_ENV !== 'production' || !process.env.SMTP_USER) ? otp : undefined 
+    return res.status(200).json({
+      message: "OTP generated successfully!",
+      simulatedOtp: (process.env.NODE_ENV !== 'production' || !process.env.SMTP_USER) ? otp : undefined
     });
   } catch (error) {
     console.error("OTP Error:", error);
@@ -1135,16 +1135,16 @@ app.post('/api/auth/verify', async (req, res) => {
 
     // Check if user exists then login, if not then create account without asking details
     const isEmail = identifier.includes('@');
-    
-    let user = await prisma.user.findFirst({ 
-      where: isEmail ? { email: identifier } : { phone: identifier } 
+
+    let user = await prisma.user.findFirst({
+      where: isEmail ? { email: identifier } : { phone: identifier }
     });
-    
+
     if (!user) {
       user = await prisma.user.create({
         data: {
           ...(isEmail ? { email: identifier } : { phone: identifier }),
-          name: 'Savana Member',
+          name: 'instalook Member',
           cart: { create: {} },
           wishlist: { create: {} }
         }
@@ -1156,17 +1156,17 @@ app.post('/api/auth/verify', async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role }, 
-      JWT_SECRET, 
+      { userId: user.id, role: user.role },
+      JWT_SECRET,
       { expiresIn: '30d' }
     );
 
-    return res.status(200).json({ 
-      message: "Login successful", 
+    return res.status(200).json({
+      message: "Login successful",
       token,
       user: { id: user.id, email: user.email, phone: user.phone, role: user.role }
     });
-  } catch(error) {
+  } catch (error) {
     console.error("Verify Error:", error);
     return res.status(500).json({ error: "Failed to verify OTP" });
   }
@@ -1178,7 +1178,7 @@ const requireAuth = (req: any, res: any, next: any) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: "Access denied. Token missing." });
-    
+
     const token = authHeader.split(' ')[1];
     const decoded: any = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
@@ -1231,7 +1231,7 @@ app.get('/api/user/addresses', requireAuth, async (req: any, res) => {
 app.post('/api/user/addresses', requireAuth, async (req: any, res) => {
   try {
     const { name, phone, pincode, city, state, flatNo, street, isDefault } = req.body;
-    
+
     if (isDefault) {
       await prisma.address.updateMany({
         where: { userId: req.user.userId },
@@ -1350,9 +1350,9 @@ app.get('/api/cart', async (req: any, res) => {
 app.post('/api/cart/add', async (req, res) => {
   try {
     const { userId, guestId, productId, qty, color, size } = req.body;
-    
+
     let cartId = '';
-    
+
     // Find or Create Cart
     if (userId) {
       const uCart = await prisma.cart.findUnique({ where: { userId } });
@@ -1408,18 +1408,18 @@ app.post('/api/cart/merge', async (req, res) => {
 
     // 3. Move items
     for (const item of guestCart.items) {
-       // Check if item already exists in user cart
-       const existing = await prisma.cartItem.findFirst({
-         where: { cartId: userCart.id, productId: item.productId, color: item.color, size: item.size }
-       });
-       
-       if (existing) {
-         await prisma.cartItem.update({ where: { id: existing.id }, data: { qty: existing.qty + item.qty } });
-       } else {
-         await prisma.cartItem.create({
-           data: { cartId: userCart.id, productId: item.productId, qty: item.qty, color: item.color, size: item.size }
-         });
-       }
+      // Check if item already exists in user cart
+      const existing = await prisma.cartItem.findFirst({
+        where: { cartId: userCart.id, productId: item.productId, color: item.color, size: item.size }
+      });
+
+      if (existing) {
+        await prisma.cartItem.update({ where: { id: existing.id }, data: { qty: existing.qty + item.qty } });
+      } else {
+        await prisma.cartItem.create({
+          data: { cartId: userCart.id, productId: item.productId, qty: item.qty, color: item.color, size: item.size }
+        });
+      }
     }
 
     // 4. Delete guest cart
@@ -1433,20 +1433,20 @@ app.post('/api/cart/merge', async (req, res) => {
 
 app.post('/api/cart/update-qty', async (req, res) => {
   try {
-     const { itemId, qty } = req.body;
-     await prisma.cartItem.update({ where: { id: itemId }, data: { qty } });
-     res.json({ success: true });
+    const { itemId, qty } = req.body;
+    await prisma.cartItem.update({ where: { id: itemId }, data: { qty } });
+    res.json({ success: true });
   } catch (error) {
-     res.status(500).json({ error: "Failed to update quantity" });
+    res.status(500).json({ error: "Failed to update quantity" });
   }
 });
 
 app.delete('/api/cart/remove/:id', async (req, res) => {
   try {
-     await prisma.cartItem.delete({ where: { id: req.params.id } });
-     res.json({ success: true });
+    await prisma.cartItem.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
   } catch (error) {
-     res.status(500).json({ error: "Failed to remove item" });
+    res.status(500).json({ error: "Failed to remove item" });
   }
 });
 
@@ -1553,12 +1553,12 @@ app.post('/api/checkout/place-order', async (req, res) => {
 
     // 0. Verify Razorpay Payment if Online
     if (paymentMethod === 'RAZORPAY') {
-       if (!razorpayDetails) return res.status(400).json({ error: "Payment details missing" });
-       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = razorpayDetails;
-       const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || '');
-       shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-       const digest = shasum.digest("hex");
-       if (digest !== razorpay_signature) return res.status(400).json({ error: "Transaction not legitimate!" });
+      if (!razorpayDetails) return res.status(400).json({ error: "Payment details missing" });
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = razorpayDetails;
+      const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || '');
+      shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+      const digest = shasum.digest("hex");
+      if (digest !== razorpay_signature) return res.status(400).json({ error: "Transaction not legitimate!" });
     }
 
     // 1. Get Cart Items
@@ -1566,43 +1566,43 @@ app.post('/api/checkout/place-order', async (req, res) => {
       where: { id: cartId },
       include: { items: { include: { product: true } } }
     });
-    
+
     if (!cart || cart.items.length === 0) return res.status(400).json({ error: "Cart is empty" });
 
     // 2. Handle Address Logic (Silent Converted Guest / User)
     let finalAddressId = addressId;
     if (userId && guestAddress) {
-       // Update User Name if it was default
-       const usr = await prisma.user.findUnique({ where: { id: userId } });
-       if (usr?.name === 'Savana Member' && guestAddress.name) {
-          await prisma.user.update({ where: { id: userId }, data: { name: guestAddress.name } });
-       }
+      // Update User Name if it was default
+      const usr = await prisma.user.findUnique({ where: { id: userId } });
+      if (usr?.name === 'instalook Member' && guestAddress.name) {
+        await prisma.user.update({ where: { id: userId }, data: { name: guestAddress.name } });
+      }
 
-       const existingAddresses = await prisma.address.findMany({ where: { userId } });
-       const match = existingAddresses.find(a => 
-          a.flatNo === guestAddress.flatNo && 
-          a.street === guestAddress.street && 
-          a.pincode === guestAddress.pincode &&
-          a.city === guestAddress.city
-       );
+      const existingAddresses = await prisma.address.findMany({ where: { userId } });
+      const match = existingAddresses.find(a =>
+        a.flatNo === guestAddress.flatNo &&
+        a.street === guestAddress.street &&
+        a.pincode === guestAddress.pincode &&
+        a.city === guestAddress.city
+      );
 
-       if (match) {
-          finalAddressId = match.id;
-       } else {
-          const newAddr = await prisma.address.create({
-            data: {
-              userId,
-              name: guestAddress.name,
-              phone: guestAddress.phone,
-              pincode: guestAddress.pincode,
-              city: guestAddress.city,
-              state: guestAddress.state || '',
-              flatNo: guestAddress.flatNo,
-              street: guestAddress.street,
-            }
-          });
-          finalAddressId = newAddr.id;
-       }
+      if (match) {
+        finalAddressId = match.id;
+      } else {
+        const newAddr = await prisma.address.create({
+          data: {
+            userId,
+            name: guestAddress.name,
+            phone: guestAddress.phone,
+            pincode: guestAddress.pincode,
+            city: guestAddress.city,
+            state: guestAddress.state || '',
+            flatNo: guestAddress.flatNo,
+            street: guestAddress.street,
+          }
+        });
+        finalAddressId = newAddr.id;
+      }
     }
 
     // 3. Create Order Data Object Dynamically

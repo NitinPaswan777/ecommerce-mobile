@@ -57,7 +57,7 @@ export default function AccountPage() {
             {session?.user?.name?.[0] || session?.user?.email?.[0]?.toUpperCase() || 'S'}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{session?.user?.name || 'Savana User'}</h1>
+            <h1 className="text-xl font-bold text-gray-900">{session?.user?.name || 'instalook User'}</h1>
             <p className="text-sm text-gray-500 font-medium">{session?.user?.email}</p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function AccountPage() {
 
       <div className="flex-1 px-4 py-4 flex flex-col gap-6">
         {sections.map((section, sIndex) => (
-          <motion.div 
+          <motion.div
             key={section.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -77,8 +77,8 @@ export default function AccountPage() {
             </div>
             <div className="flex flex-col">
               {section.items.map((item, iIndex) => (
-                <Link 
-                  href={item.href} 
+                <Link
+                  href={item.href}
                   key={item.label}
                   className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-all active:scale-[0.98] ${iIndex !== section.items.length - 1 ? 'border-b border-gray-50' : ''}`}
                 >
@@ -96,7 +96,7 @@ export default function AccountPage() {
         ))}
 
         {/* Logout Button */}
-        <button 
+        <button
           onClick={() => signOut({ callbackUrl: '/auth' })}
           className="mt-4 mb-10 w-full h-[56px] bg-red-50 text-red-600 rounded-2xl flex items-center justify-center gap-3 font-bold text-[15px] hover:bg-red-100 transition-colors"
         >
@@ -106,7 +106,7 @@ export default function AccountPage() {
 
       {/* Footer Branding */}
       <div className="py-10 text-center">
-         <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-300">Savana Global Edition v1.0</p>
+        <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-gray-300">instalook Global Edition v1.0</p>
       </div>
     </div>
   );

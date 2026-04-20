@@ -41,7 +41,7 @@ export default function Navbar() {
               <img src={config.logoUrl} alt={config.siteName} className="h-full w-full object-contain" />
             ) : (
               <h1 className="text-[1.75rem] font-black tracking-[-0.08em] text-black lowercase leading-none" style={{ fontFamily: "cursive" }}>
-                {config?.siteName || "savana"}
+                {config?.siteName || "instalook"}
               </h1>
             )}
           </Link>

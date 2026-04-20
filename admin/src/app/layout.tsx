@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Users, 
-  Settings, 
-  LogOut, 
-  Bell, 
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Users,
+  Settings,
+  LogOut,
+  Bell,
   Search,
   Grid,
   CreditCard,
@@ -35,9 +35,9 @@ export default function RootLayout({
           <aside className="sidebar">
             <div className="sidebar-logo">
               <div className="logo-dot"></div>
-              <span>SAVANA</span>
+              <span>instalook</span>
             </div>
-            
+
             <nav className="flex-1">
               <div className="nav-group">
                 <p className="nav-label">Main Menu</p>
@@ -81,14 +81,14 @@ export default function RootLayout({
             </nav>
 
             <div className="sidebar-footer" style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-               <a href="/settings" className="nav-link" style={{ paddingLeft: 0 }}>
-                  <Settings size={20} />
-                  <span>Settings</span>
-               </a>
-               <a href="/logout" className="nav-link" style={{ paddingLeft: 0, color: '#ef4444' }}>
-                  <LogOut size={20} />
-                  <span>Logout</span>
-               </a>
+              <a href="/settings" className="nav-link" style={{ paddingLeft: 0 }}>
+                <Settings size={20} />
+                <span>Settings</span>
+              </a>
+              <a href="/logout" className="nav-link" style={{ paddingLeft: 0, color: '#ef4444' }}>
+                <LogOut size={20} />
+                <span>Logout</span>
+              </a>
             </div>
           </aside>
 
@@ -96,49 +96,49 @@ export default function RootLayout({
           <div className="main-content">
             <header className="header">
               <div className="header-search">
-                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px' }} />
-                    <input 
-                      type="text" 
-                      placeholder="Search orders, products..." 
-                      style={{ 
-                        backgroundColor: 'var(--input)', 
-                        border: 'none', 
-                        borderRadius: '20px', 
-                        padding: '0.6rem 1rem 0.6rem 2.5rem',
-                        fontSize: '0.875rem',
-                        width: '320px',
-                        outline: 'none'
-                      }} 
-                    />
-                 </div>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px' }} />
+                  <input
+                    type="text"
+                    placeholder="Search orders, products..."
+                    style={{
+                      backgroundColor: 'var(--input)',
+                      border: 'none',
+                      borderRadius: '20px',
+                      padding: '0.6rem 1rem 0.6rem 2.5rem',
+                      fontSize: '0.875rem',
+                      width: '320px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                 <div style={{ position: 'relative', cursor: 'pointer' }}>
-                    <Bell size={20} color="#64748b" />
-                    <span style={{ 
-                      position: 'absolute', 
-                      top: '-2px', 
-                      right: '-2px', 
-                      width: '8px', 
-                      height: '8px', 
-                      backgroundColor: '#ef4444', 
-                      borderRadius: '50%',
-                      border: '2px solid white'
-                    }}></span>
-                 </div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                    <div style={{ textAlign: 'right' }}>
-                       <p style={{ fontSize: '0.875rem', fontWeights: 700 }}>Nitin Paswan</p>
-                       <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Super Admin</p>
-                    </div>
-                    <img 
-                      src="https://ui-avatars.com/api/?name=Nitin+Paswan&background=3b82f6&color=fff" 
-                      alt="Avatar" 
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
-                    />
-                 </div>
+                <div style={{ position: 'relative', cursor: 'pointer' }}>
+                  <Bell size={20} color="#64748b" />
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: '#ef4444',
+                    borderRadius: '50%',
+                    border: '2px solid white'
+                  }}></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeights: 700 }}>Nitin Paswan</p>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Super Admin</p>
+                  </div>
+                  <img
+                    src="https://ui-avatars.com/api/?name=Nitin+Paswan&background=3b82f6&color=fff"
+                    alt="Avatar"
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                </div>
               </div>
             </header>
 

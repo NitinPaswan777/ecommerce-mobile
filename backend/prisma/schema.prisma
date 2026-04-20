@@ -330,7 +330,7 @@ model SiteConfig {
   logoUrl        String?
   bannerUrl      String?
   bannerType     String?   // "image" | "video" | "gif"
-  siteName       String?   @default("Savana Style")
+  siteName       String?   @default("instalook Style")
   activeTags     String?   @default("Trendy,New Arrival")
   updatedAt      DateTime @updatedAt
   @@map("siteconfig")

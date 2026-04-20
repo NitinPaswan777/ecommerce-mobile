@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Savana Style Store",
+  title: "instalook Style Store",
   description: "Fashion & Lifestyle eCommerce",
 };
 

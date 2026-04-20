@@ -5,7 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
-const BACKEND_JWT_SECRET = process.env.JWT_SECRET || 'super_secret_savana_jwt_key_2026';
+const BACKEND_JWT_SECRET = process.env.JWT_SECRET || 'super_secret_instalook_jwt_key_2026';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -45,13 +45,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id;
         session.user.phone = token.phone;
-        
+
         const backendToken = jwt.sign(
           { userId: token.id, role: token.role || 'USER' },
           BACKEND_JWT_SECRET,
           { expiresIn: '30d' }
         );
-        
+
         session.backendToken = backendToken;
       }
       return session;
@@ -62,7 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user.id) {
         const cart = await prisma.cart.findUnique({ where: { userId: user.id } });
         if (!cart) await prisma.cart.create({ data: { userId: user.id } });
-        
+
         const wishlist = await prisma.wishlist.findUnique({ where: { userId: user.id } });
         if (!wishlist) await prisma.wishlist.create({ data: { userId: user.id } });
       }
