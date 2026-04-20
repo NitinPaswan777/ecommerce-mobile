@@ -20,7 +20,19 @@ syncSearchIndex();
 
 // Security and parser middleware - MUST BE AT THE TOP
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:4000', 'http://localhost:5173'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'http://localhost:3002', 
+    'http://localhost:4000', 
+    'http://localhost:5173',
+    'http://api.instalook.in',
+    'https://api.instalook.in',
+    'http://instalook.in',
+    'https://instalook.in',
+    'http://www.instalook.in',
+    'https://www.instalook.in'
+  ],
   credentials: true
 }));
 app.use(express.json());
