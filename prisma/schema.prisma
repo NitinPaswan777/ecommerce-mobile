@@ -216,7 +216,7 @@ model NotificationRequest {
   email     String
   productId String
   status    String   @default("PENDING")
-  createdAt DateTime @now()
+  createdAt DateTime @default(now())
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   @@index([productId])
   @@map("notification_request")
