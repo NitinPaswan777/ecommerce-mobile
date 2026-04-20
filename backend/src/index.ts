@@ -430,7 +430,16 @@ app.post('/api/admin/upload', diskUpload.single('file'), (req, res) => {
 app.get('/api/admin/sections', async (req, res) => {
   try {
     const sections = await prisma.homeSection.findMany({
-      include: { products: { include: { images: true } } },
+      where: { isActive: true },
+      include: {
+        products: {
+          include: {
+            product: {
+              include: { images: true }
+            }
+          }
+        }
+      },
       orderBy: { position: 'asc' }
     });
     res.json(sections);
@@ -453,12 +462,16 @@ app.post('/api/admin/sections', async (req, res) => {
 
 app.post('/api/admin/sections/:id/products', async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id: sectionId } = req.params;
     const { productId } = req.body;
     const section = await prisma.homeSection.update({
-      where: { id },
+      where: { id: sectionId },
       data: {
-        products: { connect: { id: productId } }
+        products: {
+          create: {
+            productId: productId
+          }
+        }
       }
     });
     res.json(section);
@@ -469,11 +482,18 @@ app.post('/api/admin/sections/:id/products', async (req, res) => {
 
 app.delete('/api/admin/sections/:id/products/:productId', async (req, res) => {
   try {
-    const { id, productId } = req.params;
+    const { id: sectionId, productId } = req.params;
     const section = await prisma.homeSection.update({
-      where: { id },
+      where: { id: sectionId },
       data: {
-        products: { disconnect: { id: productId } }
+        products: {
+          delete: {
+            homeSectionId_productId: {
+              homeSectionId: sectionId,
+              productId: productId
+            }
+          }
+        }
       }
     });
     res.json(section);
