@@ -36,7 +36,8 @@ export default function BannersPage() {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/banners");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/banners`);
       if (res.ok) {
         const data = await res.json();
         setBanners(data);
@@ -57,7 +58,8 @@ export default function BannersPage() {
     formDataUpload.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/admin/upload", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/upload`, {
         method: "POST",
         body: formDataUpload,
       });
@@ -76,8 +78,9 @@ export default function BannersPage() {
     e.preventDefault();
     if (!formData.imageUrl) return alert("Select an image first");
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
     const method = formData.id ? "PUT" : "POST";
-    const url = formData.id ? `http://localhost:5000/api/admin/banners/${formData.id}` : "http://localhost:5000/api/admin/banners";
+    const url = formData.id ? `${backendUrl}/api/admin/banners/${formData.id}` : `${backendUrl}/api/admin/banners`;
 
     try {
       const res = await fetch(url, {
@@ -98,7 +101,8 @@ export default function BannersPage() {
   const deleteBanner = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/banners/${id}`, { method: "DELETE" });
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/banners/${id}`, { method: "DELETE" });
       if (res.ok) fetchBanners();
     } catch (error) {
       alert("Delete failed");

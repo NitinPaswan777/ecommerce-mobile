@@ -19,9 +19,10 @@ export default function HomeSectionsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
       const [secRes, prodRes] = await Promise.all([
-        fetch("http://localhost:5000/api/admin/sections"),
-        fetch("http://localhost:5000/api/admin/products")
+        fetch(`${backendUrl}/api/admin/sections`),
+        fetch(`${backendUrl}/api/admin/products`)
       ]);
       if (secRes.ok && prodRes.ok) {
         setSections(await secRes.json());
@@ -37,7 +38,8 @@ export default function HomeSectionsPage() {
   const createSection = async () => {
     if (!newSectionTitle) return;
     try {
-      const res = await fetch("http://localhost:5000/api/admin/sections", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/sections`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newSectionTitle, position: sections.length })
@@ -55,7 +57,8 @@ export default function HomeSectionsPage() {
   const deleteSection = async (id: string) => {
     if (!confirm("Are you sure you want to delete this section?")) return;
     try {
-      await fetch(`http://localhost:5000/api/admin/sections/${id}`, { method: "DELETE" });
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      await fetch(`${backendUrl}/api/admin/sections/${id}`, { method: "DELETE" });
       fetchData();
     } catch (err) {
       alert("Delete failed");
@@ -64,7 +67,8 @@ export default function HomeSectionsPage() {
 
   const addProductToSection = async (sectionId: string, productId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/sections/${sectionId}/products`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/sections/${sectionId}/products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId })
@@ -77,7 +81,8 @@ export default function HomeSectionsPage() {
 
   const removeProductFromSection = async (sectionId: string, productId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/sections/${sectionId}/products/${productId}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/sections/${sectionId}/products/${productId}`, {
         method: "DELETE"
       });
       if (res.ok) fetchData();

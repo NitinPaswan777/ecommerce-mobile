@@ -18,7 +18,8 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/categories");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/categories`);
       if (res.ok) setCategories(await res.json());
     } catch (err) {
       console.error(err);
@@ -34,7 +35,8 @@ export default function CategoriesPage() {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/upload", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/upload`, {
         method: "POST",
         body: formData,
       });
@@ -51,9 +53,10 @@ export default function CategoriesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
     const url = editingCategory 
-      ? `http://localhost:5000/api/admin/categories/${editingCategory.id}` 
-      : "http://localhost:5000/api/admin/categories";
+      ? `${backendUrl}/api/admin/categories/${editingCategory.id}` 
+      : `${backendUrl}/api/admin/categories`;
     const method = editingCategory ? "PUT" : "POST";
 
     try {
@@ -76,7 +79,8 @@ export default function CategoriesPage() {
   const deleteCategory = async (id: string) => {
     if (!confirm("Delete this category? This might affect products.")) return;
     try {
-       const res = await fetch(`http://localhost:5000/api/admin/categories/${id}`, { method: "DELETE" });
+       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+       const res = await fetch(`${backendUrl}/api/admin/categories/${id}`, { method: "DELETE" });
        if (res.ok) fetchCategories();
     } catch (err) {
       alert("Delete failed");
