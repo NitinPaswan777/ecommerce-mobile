@@ -114,7 +114,7 @@ export default function Home() {
     // STYLE 1: 2-COLUMN GRID
     if (variant === 1) {
       return (
-        <div key={idx} className="mt-20 mb-24 px-4 bg-gray-50 py-12 rounded-[3.5rem] border border-gray-100 mx-2">
+        <div key={idx} className="px-4 bg-gray-50 py-12 rounded-[3.5rem] border border-gray-100 mx-2">
           {header}
           <div className="grid grid-cols-2 gap-3">
             {section.products.slice(0, 4).map((product: any, pIdx: number) => (
@@ -138,7 +138,7 @@ export default function Home() {
       const feature = section.products[0];
       const others = section.products.slice(1);
       return (
-        <div key={idx} className="mt-20 mb-24 px-4">
+        <div key={idx} className="px-4">
           {header}
           <div className="flex flex-col gap-4">
             <Link href={`/product?id=${feature.id}`} style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', borderRadius: '2.5rem', overflow: 'hidden', backgroundColor: '#f3f4f6' }}>
@@ -166,7 +166,7 @@ export default function Home() {
     // STYLE 3: CIRCULAR ICONS STYLE (Pastel Background)
     if (variant === 3) {
       return (
-        <div key={idx} className="mt-20 mb-24 py-12 px-6" style={{ background: 'linear-gradient(to right, #FFF5F7, #FFFBF0)', borderRadius: '4rem' }}>
+        <div key={idx} className="py-12 px-6" style={{ background: 'linear-gradient(to right, #FFF5F7, #FFFBF0)', borderRadius: '4rem' }}>
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-pink-400" />
@@ -194,7 +194,7 @@ export default function Home() {
     // STYLE 4: MINIMALIST TILES
     if (variant === 4) {
       return (
-        <div key={idx} className="mt-20 mb-24 px-4">
+        <div key={idx} className="px-4">
           <div className="flex flex-col items-center mb-10 text-center">
             <h2 className="text-4xl font-black uppercase tracking-[-0.05em] text-black italic">{section.title}</h2>
           </div>
@@ -273,7 +273,7 @@ export default function Home() {
 
       {/* Hot Categories (Circular) */}
       {hotCategories && hotCategories.length > 0 && (
-        <div className="mt-6 mb-16">
+        <div className="mt-6">
           <div className="flex items-center justify-between px-6 mt-1">
             <h3 className="text-[1.8rem] font-black uppercase text-black tracking-tighter">Hot Picks</h3>
             <Link href="/category" className="text-[10px] font-black uppercase border-b-2 border-black pb-0.5">Explore</Link>
