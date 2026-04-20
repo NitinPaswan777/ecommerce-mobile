@@ -13,7 +13,8 @@ export function SyncAuth() {
       
       const guestId = localStorage.getItem('savana_guest_id');
       if (guestId && session.user?.id) {
-         fetch('http://localhost:5000/api/cart/merge', {
+         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+         fetch(`${backendUrl}/api/cart/merge`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({ userId: session.user.id, guestId })

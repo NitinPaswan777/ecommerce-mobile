@@ -29,7 +29,8 @@ export function CartWishlistProvider({ children }: { children: React.ReactNode }
 
     try {
       // Fetch Cart Count
-      const cartUrl = new URL('http://localhost:5000/api/cart');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const cartUrl = new URL(`${backendUrl}/api/cart`);
       if (user?.id) cartUrl.searchParams.append('userId', user.id);
       if (guestId) cartUrl.searchParams.append('guestId', guestId);
       
@@ -41,7 +42,8 @@ export function CartWishlistProvider({ children }: { children: React.ReactNode }
 
       // Fetch Wishlist Count (needs token)
       if (token) {
-        const wishlistRes = await fetch('http://localhost:5000/api/wishlist', {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const wishlistRes = await fetch(`${backendUrl}/api/wishlist`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (wishlistRes.ok) {

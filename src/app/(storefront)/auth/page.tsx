@@ -24,7 +24,8 @@ export default function AuthPage() {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier })
@@ -54,7 +55,8 @@ export default function AuthPage() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/verify', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, code })

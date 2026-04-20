@@ -51,10 +51,11 @@ export default function CheckoutPage() {
     }
 
     try {
-      const configRes = await fetch('http://localhost:5000/api/config');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const configRes = await fetch(`${backendUrl}/api/config`);
       if (configRes.ok) setConfig(await configRes.json());
 
-      const cartUrl = new URL('http://localhost:5000/api/cart');
+      const cartUrl = new URL(`${backendUrl}/api/cart`);
       if (user?.id) cartUrl.searchParams.append('userId', user.id);
       if (guestId) cartUrl.searchParams.append('guestId', guestId);
 
@@ -67,7 +68,8 @@ export default function CheckoutPage() {
       }
 
       if (token) {
-        const addrRes = await fetch('http://localhost:5000/api/user/addresses', {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const addrRes = await fetch(`${backendUrl}/api/user/addresses`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (addrRes.ok) {
@@ -132,8 +134,8 @@ export default function CheckoutPage() {
         // Simulation for now
         setShowPhoneOtp(true);
         setPhoneOtp("123456"); // Simulated auto-fill
-      } else {
-        const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const res = await fetch(`${backendUrl}/api/auth/send-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier })
@@ -161,7 +163,8 @@ export default function CheckoutPage() {
     setIsPinChecking(true);
     setPinError("");
     try {
-      const res = await fetch(`http://localhost:5000/api/shiprocket/serviceability?pincode=${pin}`);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/shiprocket/serviceability?pincode=${pin}`);
       if (res.ok) {
         const data = await res.json();
         setIsPinValid(true);
@@ -196,7 +199,8 @@ export default function CheckoutPage() {
       setIsPhoneVerified(true);
       setShowPhoneOtp(false);
     } else {
-      const res = await fetch('http://localhost:5000/api/auth/verify', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, code, guestOnly: true })
@@ -229,7 +233,8 @@ export default function CheckoutPage() {
     // 1. If Online Payment, Handle Razorpay Flow
     if (paymentMethod === 'RAZORPAY') {
       try {
-        const resOrder = await fetch('http://localhost:5000/api/payment/create-order', {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const resOrder = await fetch(`${backendUrl}/api/payment/create-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: totalAmount - couponDiscount })
@@ -280,8 +285,8 @@ export default function CheckoutPage() {
   const finalizeOrder = async (razorpayDetails?: any) => {
     try {
       const currentUser = JSON.parse(localStorage.getItem('savana_user') || '{}');
-
-      const res = await fetch('http://localhost:5000/api/checkout/place-order', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+      const res = await fetch(`${backendUrl}/api/checkout/place-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
