@@ -111,7 +111,7 @@ model Product {
   wishlistItems  WishlistItem[]
   orderItems     OrderItem[]
   flashSales     FlashSale[]
-  homeSections   HomeSection[]
+  homeSections   HomeSectionProduct[]
   notificationRequests NotificationRequest[]
 
   createdAt      DateTime @default(now())
@@ -196,8 +196,18 @@ model HomeSection {
   title     String    @unique
   position  Int       @default(0)
   isActive  Boolean   @default(true)
-  products  Product[]
+  products  HomeSectionProduct[]
   @@map("home_section")
+}
+
+model HomeSectionProduct {
+  homeSectionId String
+  productId     String
+  homeSection   HomeSection @relation(fields: [homeSectionId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([homeSectionId, productId])
+  @@map("home_section_products")
 }
 
 model FlashSale {
