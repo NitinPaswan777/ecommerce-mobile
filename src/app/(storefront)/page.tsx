@@ -73,7 +73,7 @@ export default function Home() {
       }
 
       return (
-        <div key={idx} className="mt-20 mb-24 overflow-hidden">
+        <div key={idx} className="overflow-hidden">
           <div className="px-6">{header}</div>
           <div className="flex overflow-x-auto gap-10 px-6 pb-12 hide-scrollbar snap-x">
             {chunks.map((chunk, cIdx) => (
@@ -237,21 +237,21 @@ export default function Home() {
       </div>
 
       {/* Banner Thumbnail Scroll (FIXED 200px HEIGHT) */}
-      <div 
-        style={{ width: '100%', height: '200px', display: 'flex', overflowX: 'auto', backgroundColor: '#f1f5f9' }} 
+      <div
+        style={{ width: '100%', height: '200px', display: 'flex', overflowX: 'auto', backgroundColor: '#f1f5f9' }}
         className="snap-x snap-mandatory hide-scrollbar"
       >
         {banners && banners.length > 0 ? (
           banners.map((banner: any, bIdx: number) => (
             <div key={bIdx} style={{ minWidth: '100%', height: '100%', position: 'relative' }} className="snap-start group">
               <Link href={banner.link || "/category"} className="absolute inset-0 z-10" />
-              <Image 
-                src={banner.imageUrl || FashionPlaceholder} 
-                alt={banner.title || `Banner ${bIdx}`} 
-                fill 
-                className="object-cover" 
-                priority={bIdx === 0} 
-                unoptimized 
+              <Image
+                src={banner.imageUrl || FashionPlaceholder}
+                alt={banner.title || `Banner ${bIdx}`}
+                fill
+                className="object-cover"
+                priority={bIdx === 0}
+                unoptimized
               />
               {banner.showOverlay !== false && (
                 <div className="absolute inset-x-0 bottom-0 top-0 bg-black/40 flex flex-col justify-center px-10 pointer-events-none">
