@@ -10,11 +10,11 @@ interface SiteConfig {
 }
 
 const SiteSettingsContext = createContext<{ config: SiteConfig }>({
-  config: { siteName: "Savana Style" }
+  config: { siteName: "instalook Style" }
 });
 
 export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [config, setConfig] = useState<SiteConfig>({ siteName: "Savana Style" });
+  const [config, setConfig] = useState<SiteConfig>({ siteName: "instalook Style" });
 
   useEffect(() => {
     const fetchSettings = async () => {

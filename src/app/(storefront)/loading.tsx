@@ -49,14 +49,14 @@ export default function Loading() {
 
         {/* Pulsing ring around the hanger */}
         <motion.div
-           className="absolute inset-0 border-2 border-gray-100 rounded-full"
-           initial={{ scale: 0.8, opacity: 0 }}
-           animate={{ scale: 1.2, opacity: [0, 0.5, 0] }}
-           transition={{
-             repeat: Infinity,
-             duration: 2,
-             ease: "easeOut"
-           }}
+          className="absolute inset-0 border-2 border-gray-100 rounded-full"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1.2, opacity: [0, 0.5, 0] }}
+          transition={{
+            repeat: Infinity,
+            duration: 2,
+            ease: "easeOut"
+          }}
         />
       </div>
 
@@ -66,7 +66,7 @@ export default function Loading() {
         transition={{ delay: 0.3 }}
         className="mt-6 flex flex-col items-center"
       >
-        <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-gray-900">Savana</h2>
+        <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-gray-900">instalook</h2>
         <p className="text-[10px] font-medium text-gray-400 mt-2 tracking-[0.3em] uppercase animate-pulse">
           Crafting your style...
         </p>

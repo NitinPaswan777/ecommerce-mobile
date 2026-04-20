@@ -22,7 +22,7 @@ export default function AddressesPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -40,7 +40,7 @@ export default function AddressesPage() {
   const [pinError, setPinError] = useState("");
 
   const fetchAddresses = async () => {
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       const res = await fetch(`${backendUrl}/api/user/addresses`, {
@@ -91,18 +91,18 @@ export default function AddressesPage() {
       alert("Please provide a serviceable pincode");
       return;
     }
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       const res = await fetch(`${backendUrl}/api/user/addresses`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       });
-      
+
       if (res.ok) {
         setIsAdding(false);
         setFormData({ name: '', phone: '', pincode: '', city: '', state: '', flatNo: '', street: '', isDefault: false });
@@ -114,7 +114,7 @@ export default function AddressesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       await fetch(`${backendUrl}/api/user/addresses/${id}`, {
@@ -128,7 +128,7 @@ export default function AddressesPage() {
   };
 
   const handleSetDefault = async (id: string) => {
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       await fetch(`${backendUrl}/api/user/addresses/${id}/default`, {
@@ -152,7 +152,7 @@ export default function AddressesPage() {
           <h1 className="text-lg font-black tracking-tight uppercase">Saved Addresses</h1>
         </div>
         {!isAdding && (
-          <button 
+          <button
             onClick={() => setIsAdding(true)}
             className="p-2 bg-black text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/20"
           >
@@ -164,7 +164,7 @@ export default function AddressesPage() {
       <div className="flex-1 p-4 pb-20">
         <AnimatePresence mode="wait">
           {isAdding ? (
-            <motion.form 
+            <motion.form
               key="add-form"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -190,7 +190,7 @@ export default function AddressesPage() {
               ].map((field) => (
                 <div key={field.name} className="flex flex-col gap-1.5 relative">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">{field.label}</label>
-                  <input 
+                  <input
                     type={field.type}
                     required
                     maxLength={field.name === 'pincode' ? 6 : undefined}
@@ -200,10 +200,9 @@ export default function AddressesPage() {
                       setFormData({ ...formData, [field.name]: val });
                       if (field.name === 'pincode') validatePincode(val);
                     }}
-                    className={`h-10 border-b-2 bg-transparent focus:border-black outline-none transition-colors font-bold text-gray-800 ${
-                      field.name === 'pincode' && isPinValid ? 'border-green-500' : 
-                      field.name === 'pincode' && pinError ? 'border-red-500' : 'border-gray-100'
-                    }`}
+                    className={`h-10 border-b-2 bg-transparent focus:border-black outline-none transition-colors font-bold text-gray-800 ${field.name === 'pincode' && isPinValid ? 'border-green-500' :
+                        field.name === 'pincode' && pinError ? 'border-red-500' : 'border-gray-100'
+                      }`}
                   />
                   {field.name === 'pincode' && (
                     <div className="absolute right-0 bottom-2 flex items-center gap-1.5">
@@ -219,8 +218,8 @@ export default function AddressesPage() {
               ))}
 
               <label className="flex items-center gap-3 mt-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={formData.isDefault}
                   onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
                   className="w-5 h-5 accent-black"
@@ -228,7 +227,7 @@ export default function AddressesPage() {
                 <span className="text-sm font-bold text-gray-700">Set as default address</span>
               </label>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full h-14 bg-black text-white font-black rounded-2xl mt-4 hover:bg-gray-900 transition-colors shadow-xl shadow-black/10"
               >
@@ -236,7 +235,7 @@ export default function AddressesPage() {
               </button>
             </motion.form>
           ) : (
-            <motion.div 
+            <motion.div
               key="list"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -257,7 +256,7 @@ export default function AddressesPage() {
                 </div>
               ) : (
                 addresses.map((addr, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={addr.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -282,7 +281,7 @@ export default function AddressesPage() {
                         </button>
                       </div>
                     </div>
-                    
+
                     <p className="text-sm text-gray-600 mt-2 font-medium leading-relaxed">
                       {addr.flatNo}, {addr.street}<br />
                       {addr.city}, {addr.state} - {addr.pincode}<br />

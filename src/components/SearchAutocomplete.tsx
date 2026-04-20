@@ -18,7 +18,7 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
-      const savedHistory = localStorage.getItem('savana_search_history');
+      const savedHistory = localStorage.getItem('instalook_search_history');
       if (savedHistory) setHistory(JSON.parse(savedHistory));
     }
   }, [isOpen]);
@@ -50,12 +50,12 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
 
   const handleSearch = (searchTerm: string) => {
     if (!searchTerm.trim()) return;
-    
+
     // Save to history
     const newHistory = [searchTerm, ...history.filter(h => h !== searchTerm)].slice(0, 5);
     setHistory(newHistory);
-    localStorage.setItem('savana_search_history', JSON.stringify(newHistory));
-    
+    localStorage.setItem('instalook_search_history', JSON.stringify(newHistory));
+
     onClose();
     router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
   };
@@ -63,7 +63,7 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -73,13 +73,13 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
           <div className="px-4 flex items-center gap-3 h-14 border-b border-gray-100">
             <div className="flex-1 relative flex items-center bg-gray-50 rounded-xl px-3 h-11 border border-gray-100 focus-within:border-black transition-all">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
-              <input 
+              <input
                 ref={inputRef}
-                type="text" 
+                type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
-                placeholder="Search for styles, trends..." 
+                placeholder="Search for styles, trends..."
                 className="flex-1 bg-transparent border-none outline-none px-3 text-sm font-medium placeholder:text-gray-400"
               />
               {query && (
@@ -99,7 +99,7 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
                   <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400">Recent Searches</h3>
-                      <button onClick={() => { setHistory([]); localStorage.removeItem('savana_search_history'); }} className="text-[10px] font-bold text-gray-400 uppercase">Clear</button>
+                      <button onClick={() => { setHistory([]); localStorage.removeItem('instalook_search_history'); }} className="text-[10px] font-bold text-gray-400 uppercase">Clear</button>
                     </div>
                     <div className="flex flex-col gap-4">
                       {history.map((item, i) => (
@@ -112,16 +112,16 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
                 )}
 
                 <div>
-                   <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                     <TrendingUp className="w-3.5 h-3.5 text-[#FF4D6D]" /> Trending Now
-                   </h3>
-                   <div className="flex flex-wrap gap-2">
-                     {['Y2K Tops', 'Floral Summer', 'Denim Skirts', 'Gothic Black', 'Corset Tops'].map((tag, i) => (
-                       <button key={i} onClick={() => handleSearch(tag)} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-xs font-bold text-gray-700 transition-colors">
-                         {tag}
-                       </button>
-                     ))}
-                   </div>
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-[#FF4D6D]" /> Trending Now
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['Y2K Tops', 'Floral Summer', 'Denim Skirts', 'Gothic Black', 'Corset Tops'].map((tag, i) => (
+                      <button key={i} onClick={() => handleSearch(tag)} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-xs font-bold text-gray-700 transition-colors">
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -129,7 +129,7 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
               <div className="flex flex-col">
                 <div className="px-4 py-4">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">Suggested Results</h3>
-                  
+
                   {isLoading && suggestions.length === 0 ? (
                     <div className="flex items-center gap-3 py-2 animate-pulse">
                       <div className="w-12 h-16 bg-gray-100 rounded-lg" />
@@ -141,33 +141,33 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
                   ) : suggestions.length > 0 ? (
                     <div className="flex flex-col gap-4">
                       {suggestions.map((item: any) => (
-                        <Link 
-                          href={`/product?id=${item.id}`} 
-                          key={item.id} 
+                        <Link
+                          href={`/product?id=${item.id}`}
+                          key={item.id}
                           onClick={onClose}
                           className="flex items-center gap-4 group"
                         >
                           <div className="w-14 h-[75px] bg-gray-100 rounded-xl relative overflow-hidden shrink-0 border border-gray-100">
-                             <Image src={item.image} alt={item.name} fill className="object-cover" />
+                            <Image src={item.image} alt={item.name} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                             <p className="text-[13px] font-bold text-gray-900 line-clamp-1">{item.name}</p>
-                             <p className="text-[12px] font-black text-[#FF4D6D] mt-0.5">₹{item.price.toLocaleString('en-IN')}</p>
+                            <p className="text-[13px] font-bold text-gray-900 line-clamp-1">{item.name}</p>
+                            <p className="text-[12px] font-black text-[#FF4D6D] mt-0.5">₹{item.price.toLocaleString('en-IN')}</p>
                           </div>
                           <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-black transition-colors shrink-0" />
                         </Link>
                       ))}
-                      <button 
+                      <button
                         onClick={() => handleSearch(query)}
                         className="mt-2 py-3 border-t border-gray-100 text-left flex items-center justify-between group"
                       >
-                         <span className="text-xs font-bold text-gray-900">See all results for "{query}"</span>
-                         <ArrowRight className="w-4 h-4 text-black" />
+                        <span className="text-xs font-bold text-gray-900">See all results for "{query}"</span>
+                        <ArrowRight className="w-4 h-4 text-black" />
                       </button>
                     </div>
                   ) : !isLoading && (
                     <div className="py-10 text-center">
-                       <p className="text-sm font-medium text-gray-400">No matching styles found.</p>
+                      <p className="text-sm font-medium text-gray-400">No matching styles found.</p>
                     </div>
                   )}
                 </div>

@@ -21,28 +21,28 @@ export default function ProductClient({ product }: { product: any }) {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const selectionRef = useRef<HTMLDivElement>(null);
-  
+
   // Delivery States
   const [pincode, setPincode] = useState("");
   const [deliveryData, setDeliveryData] = useState<any>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState("");
   const [showInput, setShowInput] = useState(false);
-  
+
   const { data: session, status } = useSession();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Derived state: Get active variant based on selection
-  const activeVariant = product.variants?.find((v: any) => 
+  const activeVariant = product.variants?.find((v: any) =>
     v.color === selectedColor?.name && v.size === selectedSize?.name
   );
 
   // Dynamic Images based on Color
   const getDynamicImages = () => {
     const generalImages = product.images?.map((img: any) => img.url) || [];
-    
+
     // Find all images for this color across all sizes
     const colorSpecificImages = product.variants
       ?.filter((v: any) => v.color === selectedColor?.name && v.images)
@@ -53,7 +53,7 @@ export default function ProductClient({ product }: { product: any }) {
       })
       .filter((url: string, index: number, self: string[]) => url && self.indexOf(url) === index) || [];
 
-    const finalImages = colorSpecificImages.length > 0 
+    const finalImages = colorSpecificImages.length > 0
       ? [...colorSpecificImages, ...generalImages.filter(url => !colorSpecificImages.includes(url))]
       : generalImages;
 
@@ -96,7 +96,7 @@ export default function ProductClient({ product }: { product: any }) {
     }
   };
 
-      
+
   const videoUrl = product?.videoUrl;
 
   let discountPercentage = 0;
@@ -112,13 +112,13 @@ export default function ProductClient({ product }: { product: any }) {
       selectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    
+
     setIsAdding(true);
-    
+
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('savana_token');
-    const guestId = localStorage.getItem('savana_guest_id');
-    
+    const token = localStorage.getItem('instalook_token');
+    const guestId = localStorage.getItem('instalook_guest_id');
+
     try {
       const res = await fetch(`${backendUrl}/api/cart/add`, {
         method: 'POST',
@@ -127,7 +127,7 @@ export default function ProductClient({ product }: { product: any }) {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          userId: token ? JSON.parse(localStorage.getItem('savana_user') || '{}').id : null,
+          userId: token ? JSON.parse(localStorage.getItem('instalook_user') || '{}').id : null,
           guestId: guestId,
           productId: product.id,
           qty: 1,
@@ -137,13 +137,13 @@ export default function ProductClient({ product }: { product: any }) {
       });
 
       if (!res.ok) throw new Error("Failed to add to bag");
-      
+
       const data = await res.json();
-      
+
       if (!token && data.cartId) {
-        localStorage.setItem('savana_guest_id', data.cartId);
+        localStorage.setItem('instalook_guest_id', data.cartId);
       }
-      
+
       setIsAdded(true);
       // No redirect
     } catch (err) {
@@ -191,7 +191,7 @@ export default function ProductClient({ product }: { product: any }) {
   }, [product]);
   useEffect(() => {
     const fetchInitialStatus = async () => {
-      const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
+      const token = (session as any)?.backendToken || localStorage.getItem('instalook_token');
       if (token) {
         try {
           // Fetch wishlist
@@ -246,43 +246,43 @@ export default function ProductClient({ product }: { product: any }) {
   }, [session, status]);
 
   const toggleWishlist = async () => {
-    const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
+    const token = (session as any)?.backendToken || localStorage.getItem('instalook_token');
     if (!token) {
-        toast.error("Please login to use wishlist", {
-            style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
-        });
-        return;
+      toast.error("Please login to use wishlist", {
+        style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
+      });
+      return;
     }
 
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/wishlist/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ productId: product.id })
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/wishlist/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId: product.id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsInWishlist(data.added);
+        toast.success(data.added ? "Added to Wishlist" : "Removed from Wishlist", {
+          icon: data.added ? '❤️' : '💔',
+          style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
         });
-        if (res.ok) {
-            const data = await res.json();
-            setIsInWishlist(data.added);
-            toast.success(data.added ? "Added to Wishlist" : "Removed from Wishlist", {
-                icon: data.added ? '❤️' : '💔',
-                style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
-            });
-        }
+      }
     } catch (e) {
-        console.error(e);
+      console.error(e);
     }
   };
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-white relative pb-24">
       {/* We removed the negative margin so it no longer clips underneath the fixed Navbar spacing block */}
-      
+
       {/* Image Gallery (Snap Scroll) */}
       <div className="w-full relative bg-gray-100 overflow-hidden">
-        <div 
+        <div
           ref={scrollRef}
           onScroll={handleScroll}
           className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-0"
@@ -291,7 +291,7 @@ export default function ProductClient({ product }: { product: any }) {
           {images.map((url: string, i: number) => (
             <div key={i} className="w-full shrink-0 snap-center relative aspect-[3/4]">
               <Image src={url} alt={product.name} fill className="object-cover" priority={i === 0} />
-              
+
               {/* Badges on first image */}
               {i === 0 && (
                 <div className="absolute bottom-6 left-4 flex gap-1 z-10">
@@ -312,8 +312,8 @@ export default function ProductClient({ product }: { product: any }) {
         {/* Carousel Indicators */}
         <div className="flex gap-1.5 items-center absolute bottom-3 left-1/2 -translate-x-1/2 mb-1 z-10">
           {images.map((_: any, i: number) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               onClick={() => scrollToIndex(i)}
               className={`h-1.5 rounded-full transition-all duration-300 ${i === activeImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
             ></div>
@@ -323,14 +323,14 @@ export default function ProductClient({ product }: { product: any }) {
         {/* Desktop Navigation Arrows (Visible only if multiple images) */}
         {images.length > 1 && (
           <div className="hidden md:block">
-            <button 
+            <button
               onClick={() => scrollToIndex(activeImageIndex - 1)}
               disabled={activeImageIndex === 0}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center text-black disabled:hidden z-20"
             >
               <ChevronRight className="rotate-180" />
             </button>
-            <button 
+            <button
               onClick={() => scrollToIndex(activeImageIndex + 1)}
               disabled={activeImageIndex === images.length - 1}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center text-black disabled:hidden z-20"
@@ -344,57 +344,57 @@ export default function ProductClient({ product }: { product: any }) {
       {/* Thumbnail Strip (Thumb Scrolling) */}
       {images.length > 1 && (
         <div className="px-4 mt-2">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
-                {images.map((url: string, i: number) => (
-                    <button 
-                        key={i}
-                        onClick={() => scrollToIndex(i)}
-                        className={`w-14 h-18 rounded-md overflow-hidden shrink-0 transition-all duration-300 border-2 ${i === activeImageIndex ? 'border-black scale-105' : 'border-transparent opacity-60'}`}
-                    >
-                        <Image src={url} alt={`thumb-${i}`} width={56} height={72} className="w-full h-full object-cover" />
-                    </button>
-                ))}
-            </div>
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+            {images.map((url: string, i: number) => (
+              <button
+                key={i}
+                onClick={() => scrollToIndex(i)}
+                className={`w-14 h-18 rounded-md overflow-hidden shrink-0 transition-all duration-300 border-2 ${i === activeImageIndex ? 'border-black scale-105' : 'border-transparent opacity-60'}`}
+              >
+                <Image src={url} alt={`thumb-${i}`} width={56} height={72} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-        {/* Floating Draggable Video Banner */}
-        {videoUrl && !isVideoOpen && isPipVisible && (
-          <motion.div 
-            drag
-            dragConstraints={{ left: -200, right: 0, top: 0, bottom: 300 }}
-            className="absolute right-4 top-4 w-24 aspect-[9/16] bg-black rounded-xl shadow-2xl z-30 cursor-grab active:cursor-grabbing border-2 border-white overflow-hidden group"
+      {/* Floating Draggable Video Banner */}
+      {videoUrl && !isVideoOpen && isPipVisible && (
+        <motion.div
+          drag
+          dragConstraints={{ left: -200, right: 0, top: 0, bottom: 300 }}
+          className="absolute right-4 top-4 w-24 aspect-[9/16] bg-black rounded-xl shadow-2xl z-30 cursor-grab active:cursor-grabbing border-2 border-white overflow-hidden group"
+        >
+          <video
+            src={videoUrl}
+            className="w-full h-full object-cover opacity-90"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+          {/* Play Overlay */}
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors"
+            onClick={() => setIsVideoOpen(true)}
           >
-            <video 
-              src={videoUrl} 
-              className="w-full h-full object-cover opacity-90"
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-            />
-            {/* Play Overlay */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors"
-              onClick={() => setIsVideoOpen(true)}
-            >
-              <Play className="w-8 h-8 fill-white/70 text-white/50 drop-shadow-md" />
-            </div>
-            {/* Small X button to purely hide it if we wanted */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); setIsPipVisible(false); }}
-              className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white cursor-pointer z-40 transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </motion.div>
-        )}
+            <Play className="w-8 h-8 fill-white/70 text-white/50 drop-shadow-md" />
+          </div>
+          {/* Small X button to purely hide it if we wanted */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsPipVisible(false); }}
+            className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white cursor-pointer z-40 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </motion.div>
+      )}
 
 
       {/* Flash Sale Banner */}
       <div className="bg-gradient-to-r from-[#FFC107] to-[#FF9800] text-black flex justify-between items-center px-4 py-2 relative overflow-hidden">
         <h3 className="font-extrabold tracking-wide text-sm z-10">FLASH SALE</h3>
-        
+
         <div className="flex items-center gap-1 font-bold text-sm tracking-widest z-10">
           <span>05h</span> : <span>59m</span> : <span>31s</span>
         </div>
@@ -408,7 +408,7 @@ export default function ProductClient({ product }: { product: any }) {
           )}
         </div>
 
-        
+
         <div className="flex items-end gap-2 mt-1">
           <span className="text-2xl font-bold text-[#FF3B30]">₹{displayPrice.toLocaleString('en-IN')}</span>
           {displayOriginalPrice && (
@@ -426,56 +426,56 @@ export default function ProductClient({ product }: { product: any }) {
       <div ref={selectionRef}>
         {/* Selectable Colors */}
         {product.colors && product.colors.length > 0 && (
-        <div className="px-4 mt-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-black">COLOR:</span>
-            <span className="text-xs font-medium text-gray-700 capitalize">{selectedColor?.name || 'Please select'}</span>
+          <div className="px-4 mt-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-black">COLOR:</span>
+              <span className="text-xs font-medium text-gray-700 capitalize">{selectedColor?.name || 'Please select'}</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+              {product.colors.map((color: any, idx: number) => {
+                const isActive = selectedColor?.name === color.name;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedColor(color);
+                    }}
+                    className={`w-12 h-16 rounded overflow-hidden relative cursor-pointer outline-offset-2 transition-all ${isActive ? 'outline outline-1 outline-black shadow-md' : 'border border-gray-200 opacity-60'}`}
+                  >
+                    <div className="w-full h-full" style={{ backgroundColor: color.hexCode }}></div>
+                    <div className="absolute inset-0 border border-black/5 mix-blend-overlay"></div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-            {product.colors.map((color: any, idx: number) => {
-              const isActive = selectedColor?.name === color.name;
-              return (
-                <button 
-                  key={idx} 
-                  onClick={() => {
-                    setSelectedColor(color);
-                  }}
-                  className={`w-12 h-16 rounded overflow-hidden relative cursor-pointer outline-offset-2 transition-all ${isActive ? 'outline outline-1 outline-black shadow-md' : 'border border-gray-200 opacity-60'}`}
-                >
-                   <div className="w-full h-full" style={{ backgroundColor: color.hexCode }}></div>
-                   <div className="absolute inset-0 border border-black/5 mix-blend-overlay"></div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Selectable Sizes */}
-      {product.sizes && product.sizes.length > 0 && (
-        <div className="px-4 mt-6">
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-black">SIZE:</span>
-            <span className="text-xs font-medium text-gray-700 uppercase">{selectedSize?.name || 'Please select'}</span>
+        {/* Selectable Sizes */}
+        {product.sizes && product.sizes.length > 0 && (
+          <div className="px-4 mt-6">
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-black">SIZE:</span>
+              <span className="text-xs font-medium text-gray-700 uppercase">{selectedSize?.name || 'Please select'}</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {product.sizes.map((size: any, idx: number) => {
+                const isActive = selectedSize?.name === size.name;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedSize(size);
+                    }}
+                    className={`min-w-[48px] h-10 border flex items-center justify-center rounded-lg text-xs font-bold transition-all ${isActive ? 'bg-black text-white border-black shadow-md scale-105' : 'bg-white text-gray-800 border-gray-200'}`}
+                  >
+                    {size.name}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {product.sizes.map((size: any, idx: number) => {
-              const isActive = selectedSize?.name === size.name;
-              return (
-                <button 
-                  key={idx} 
-                  onClick={() => {
-                    setSelectedSize(size);
-                  }}
-                  className={`min-w-[48px] h-10 border flex items-center justify-center rounded-lg text-xs font-bold transition-all ${isActive ? 'bg-black text-white border-black shadow-md scale-105' : 'bg-white text-gray-800 border-gray-200'}`}
-                >
-                  {size.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+        )}
       </div>
 
       {/* Delivery Check Section */}
@@ -487,30 +487,30 @@ export default function ProductClient({ product }: { product: any }) {
 
         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100/50">
           {!showInput && deliveryData ? (
-             <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center shrink-0">
-                    <MapPin className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Deliver to</p>
-                    <p className="text-[13px] font-bold text-gray-900">{pincode}</p>
-                  </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4 text-white" />
                 </div>
-                <button onClick={() => setShowInput(true)} className="text-[10px] font-black uppercase text-[#FF4D6D] tracking-wider py-2 px-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all active:scale-95">Change</button>
-             </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Deliver to</p>
+                  <p className="text-[13px] font-bold text-gray-900">{pincode}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowInput(true)} className="text-[10px] font-black uppercase text-[#FF4D6D] tracking-wider py-2 px-3 bg-white rounded-lg border border-gray-100 shadow-sm transition-all active:scale-95">Change</button>
+            </div>
           ) : (
             <div className="flex items-center gap-3">
               <div className="flex-1 relative">
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   maxLength={6}
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
                   placeholder="Enter Pincode"
                   className="w-full bg-white border border-gray-200 rounded-xl h-12 px-4 text-sm font-bold focus:border-black outline-none transition-all"
                 />
-                <button 
+                <button
                   onClick={() => {
                     checkDelivery();
                     if (pincode.length === 6) setShowInput(false);
@@ -527,7 +527,7 @@ export default function ProductClient({ product }: { product: any }) {
           {error && <p className="text-[10px] font-bold text-[#FF3B30] mt-3 ml-1 uppercase tracking-wider">{error}</p>}
 
           {deliveryData && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 flex items-start gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm"
@@ -568,9 +568,9 @@ export default function ProductClient({ product }: { product: any }) {
 
       {/* Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-4 py-3 flex gap-4 z-[100] items-center shadow-[0_-4px_15px_rgba(0,0,0,0.08)]">
-        <button 
-            onClick={toggleWishlist}
-            className={`transition-colors p-1 ${isInWishlist ? 'text-[#FF4D6D]' : 'text-gray-700 hover:text-[#FF4D6D]'}`}
+        <button
+          onClick={toggleWishlist}
+          className={`transition-colors p-1 ${isInWishlist ? 'text-[#FF4D6D]' : 'text-gray-700 hover:text-[#FF4D6D]'}`}
         >
           <Heart className={`w-7 h-7 stroke-[1.5] ${isInWishlist ? 'fill-current' : ''}`} />
         </button>
@@ -580,27 +580,27 @@ export default function ProductClient({ product }: { product: any }) {
         </button>
         {!isOutOfStock ? (
           isAdded ? (
-            <Link 
+            <Link
               href="/cart"
               className="flex-1 bg-black text-white rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-all shadow active:scale-95"
             >
               ADDED (GO TO CART)
             </Link>
           ) : (
-            <button 
+            <button
               onClick={addToBag}
               disabled={isAdding}
               className="flex-1 bg-[#FFB300] hover:bg-[#FFA000] text-black rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-colors shadow disabled:opacity-70 disabled:cursor-wait"
             >
-               {isAdding ? 'ADDING...' : 'ADD TO BAG'}
+              {isAdding ? 'ADDING...' : 'ADD TO BAG'}
             </button>
           )
         ) : (
-          <button 
+          <button
             onClick={async () => {
               const userEmail = session?.user?.email;
               const emailToUse = userEmail || window.prompt("Enter your email to get notified when back in stock:", "");
-              
+
               if (emailToUse && emailToUse.includes('@')) {
                 const loadingToast = toast.loading("Submitting request...", {
                   style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '13px', fontWeight: 'bold' }
@@ -632,8 +632,8 @@ export default function ProductClient({ product }: { product: any }) {
             }}
             className="flex-1 bg-white hover:bg-gray-50 text-black border-2 border-black rounded h-[46px] flex items-center justify-center gap-2 font-bold text-sm tracking-wide transition-all active:scale-95 shadow-sm"
           >
-             <Bell className="w-4 h-4" />
-             NOTIFY ME
+            <Bell className="w-4 h-4" />
+            NOTIFY ME
           </button>
         )}
       </div>
@@ -645,7 +645,7 @@ export default function ProductClient({ product }: { product: any }) {
             <h2 className="text-lg font-black tracking-widest uppercase text-gray-900 shrink-0">You May Also Like</h2>
             <div className="h-[1px] bg-gray-100 flex-1"></div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-x-3 gap-y-6">
             {relatedProducts.map((item: any, i: number) => {
               const displayImg = item.images?.[0]?.url || item.images[0]?.url;
@@ -653,15 +653,15 @@ export default function ProductClient({ product }: { product: any }) {
                 <Link href={`/product?id=${item.id}`} key={i} className="flex flex-col group">
                   <div className="relative aspect-[3/4] bg-gray-100 w-full overflow-hidden mb-2 rounded-xl border border-gray-50">
                     <Image src={displayImg} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
-                    
+
                     {item.fastDelivery && (
                       <div className="absolute bottom-2 left-0 bg-white/95 backdrop-blur-sm text-[#111111] text-[9px] font-bold tracking-widest px-1.5 py-0.5 flex items-center shadow-sm rounded-r z-10">
                         <Zap className="w-2.5 h-2.5 fill-black mr-0.5" /> FAST
                       </div>
                     )}
-                    
-                    <WishlistButton 
-                      productId={item.id} 
+
+                    <WishlistButton
+                      productId={item.id}
                       className="absolute bottom-2 right-2 w-7 h-7 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 shadow-sm border border-gray-100 transition-all z-10"
                       iconClassName="w-3.5 h-3.5"
                     />
@@ -685,9 +685,9 @@ export default function ProductClient({ product }: { product: any }) {
 
       {/* Fullscreen Video Overlay */}
       {isVideoOpen && (
-        <FullscreenVideoPlayer 
-           videoUrl={videoUrl} 
-           onClose={() => setIsVideoOpen(false)} 
+        <FullscreenVideoPlayer
+          videoUrl={videoUrl}
+          onClose={() => setIsVideoOpen(false)}
         />
       )}
     </div>
@@ -700,7 +700,7 @@ function FullscreenVideoPlayer({ videoUrl, onClose }: { videoUrl: string, onClos
   const [progress, setProgress] = useState(0);
 
   // Force play on mount to bypass browser autoPlay stringency in portals
-  
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(e => {
@@ -742,62 +742,62 @@ function FullscreenVideoPlayer({ videoUrl, onClose }: { videoUrl: string, onClos
     <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-300">
       {/* Top Bar Area */}
       <div className="absolute top-4 right-4 z-50">
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
           className="w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 text-white hover:bg-white/20 transition-all cursor-pointer"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
-      
+
       {/* Video Surface Area - Tap to toggle play */}
-      <div 
+      <div
         className="flex-1 w-full h-full relative flex items-center justify-center bg-black cursor-pointer"
         onClick={togglePlay}
       >
-         <video 
-           ref={videoRef}
-           src={videoUrl}
-           className="w-full max-h-[100vh] object-contain"
-           autoPlay 
-           loop 
-           playsInline
-           onTimeUpdate={handleTimeUpdate}
-           onPlay={() => setIsPlaying(true)}
-           onPause={() => setIsPlaying(false)}
-         ></video>
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          className="w-full max-h-[100vh] object-contain"
+          autoPlay
+          loop
+          playsInline
+          onTimeUpdate={handleTimeUpdate}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        ></video>
 
-         {/* Visual Play/Pause feedback overlay */}
-         {!isPlaying && (
-           <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
-             <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/10">
-                <Play className="w-10 h-10 fill-white text-white drop-shadow-md ml-1" />
-             </div>
-           </div>
-         )}
+        {/* Visual Play/Pause feedback overlay */}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/10">
+              <Play className="w-10 h-10 fill-white text-white drop-shadow-md ml-1" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress Seek Bar */}
       <div className="absolute bottom-10 left-0 w-full px-6 z-50">
-         <div className="w-full h-2 bg-white/20 rounded-full relative group">
-           {/* Filled Progress inside */}
-           <div className="absolute top-0 left-0 h-full bg-[#FF4D6D] transition-all rounded-l-full" style={{ width: `${progress}%` }}></div>
-           
-           {/* Scrubber thumb simulation */}
-           <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-md shadow-black/20" style={{ left: `calc(${progress}% - 8px)` }}></div>
+        <div className="w-full h-2 bg-white/20 rounded-full relative group">
+          {/* Filled Progress inside */}
+          <div className="absolute top-0 left-0 h-full bg-[#FF4D6D] transition-all rounded-l-full" style={{ width: `${progress}%` }}></div>
 
-           {/* Invisible Range Slider */}
-           <input 
-             type="range" 
-             min="0" 
-             max="100" 
-             step="0.1"
-             value={progress || 0} 
-             onChange={handleSeek}
-             onClick={(e) => e.stopPropagation()} 
-             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-           />
-         </div>
+          {/* Scrubber thumb simulation */}
+          <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-md shadow-black/20" style={{ left: `calc(${progress}% - 8px)` }}></div>
+
+          {/* Invisible Range Slider */}
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={progress || 0}
+            onChange={handleSeek}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ interface CartWishlistContextType {
 const CartWishlistContext = createContext<CartWishlistContextType>({
   cartCount: 0,
   wishlistCount: 0,
-  refreshCounts: async () => {},
+  refreshCounts: async () => { },
 });
 
 export function CartWishlistProvider({ children }: { children: React.ReactNode }) {
@@ -22,9 +22,9 @@ export function CartWishlistProvider({ children }: { children: React.ReactNode }
 
   const fetchCounts = async () => {
     // Only fetch if session is stable or we have a guestId
-    const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
-    const guestId = localStorage.getItem('savana_guest_id');
-    const userJson = localStorage.getItem('savana_user');
+    const token = (session as any)?.backendToken || localStorage.getItem('instalook_token');
+    const guestId = localStorage.getItem('instalook_guest_id');
+    const userJson = localStorage.getItem('instalook_user');
     const user = userJson ? JSON.parse(userJson) : null;
 
     try {
@@ -33,7 +33,7 @@ export function CartWishlistProvider({ children }: { children: React.ReactNode }
       const cartUrl = new URL(`${backendUrl}/api/cart`);
       if (user?.id) cartUrl.searchParams.append('userId', user.id);
       if (guestId) cartUrl.searchParams.append('guestId', guestId);
-      
+
       const cartRes = await fetch(cartUrl.toString());
       if (cartRes.ok) {
         const cartData = await cartRes.json();
@@ -67,9 +67,9 @@ export function CartWishlistProvider({ children }: { children: React.ReactNode }
   // Listen for local storage changes (if other tabs update cart)
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-        if (e.key === 'savana_cart_updated' || e.key === 'savana_wishlist_updated') {
-            fetchCounts();
-        }
+      if (e.key === 'instalook_cart_updated' || e.key === 'instalook_wishlist_updated') {
+        fetchCounts();
+      }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);

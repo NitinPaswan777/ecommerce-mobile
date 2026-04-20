@@ -25,14 +25,14 @@ const WheelPicker = ({ options, value, onChange }: { options: any[], value: any,
   };
 
   return (
-    <div 
+    <div
       ref={scrollRef}
       onScroll={handleScroll}
       className="h-[200px] overflow-y-scroll snap-y snap-mandatory scrollbar-hide w-full"
     >
       <div className="h-[80px]" /> {/* Top padding */}
       {options.map((opt) => (
-        <div 
+        <div
           key={opt}
           className={`h-[40px] flex items-center justify-center snap-center text-lg font-bold transition-all ${opt === value ? 'text-black scale-110' : 'text-gray-300 scale-90'}`}
         >
@@ -50,7 +50,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   // Custom Date Picker State
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState({ year: 1990, month: 1, day: 1 });
@@ -67,7 +67,7 @@ export default function ProfilePage() {
   });
 
   const fetchProfile = async () => {
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       const res = await fetch(`${backendUrl}/api/user/profile`, {
@@ -83,7 +83,7 @@ export default function ProfilePage() {
           gender: data.gender || '',
           dob: dobStr
         });
-        
+
         if (dobStr) {
           const d = new Date(dobStr);
           setTempDate({ year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() });
@@ -103,14 +103,14 @@ export default function ProfilePage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const token = localStorage.getItem('savana_token');
+    const token = localStorage.getItem('instalook_token');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       await fetch(`${backendUrl}/api/user/profile`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       });
@@ -150,19 +150,19 @@ export default function ProfilePage() {
 
       <div className="p-6 flex flex-col items-center pb-32">
         <div className="relative mb-8">
-           <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center text-white text-3xl font-black shadow-2xl relative overflow-hidden group">
-              {profile?.image ? <img src={profile.image} className="w-full h-full object-cover" alt="Profile" /> : 'S'}
-           </div>
-           <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full border border-gray-100 flex items-center justify-center shadow-md">
-              <UserRound className="w-4 h-4 text-gray-400" />
-           </div>
+          <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center text-white text-3xl font-black shadow-2xl relative overflow-hidden group">
+            {profile?.image ? <img src={profile.image} className="w-full h-full object-cover" alt="Profile" /> : 'S'}
+          </div>
+          <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full border border-gray-100 flex items-center justify-center shadow-md">
+            <UserRound className="w-4 h-4 text-gray-400" />
+          </div>
         </div>
 
         <form onSubmit={handleUpdate} className="w-full flex flex-col gap-6">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">*Name</label>
-              <input 
+              <input
                 type="text"
                 required
                 value={formData.name}
@@ -187,7 +187,7 @@ export default function ProfilePage() {
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.gender === g ? 'border-orange-500' : 'border-gray-200 group-hover:border-gray-400'}`}>
                       {formData.gender === g && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
                     </div>
-                    <input type="radio" name="gender" className="hidden" onChange={() => setFormData({...formData, gender: g})} />
+                    <input type="radio" name="gender" className="hidden" onChange={() => setFormData({ ...formData, gender: g })} />
                     <span className={`text-[15px] font-medium ${formData.gender === g ? 'text-black font-bold' : 'text-gray-400'}`}>{g}</span>
                   </label>
                 ))}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             className="mt-4 w-full h-14 bg-black text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-xl"
           >
@@ -208,12 +208,12 @@ export default function ProfilePage() {
       <AnimatePresence>
         {showDatePicker && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowDatePicker(false)}
               className="fixed inset-0 bg-black/40 z-[60]"
             />
-            <motion.div 
+            <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white z-[70] rounded-t-[30px] overflow-hidden"
@@ -229,10 +229,10 @@ export default function ProfilePage() {
               <div className="relative px-6 py-4 flex gap-2">
                 {/* Highlight/Selection Area */}
                 <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-[40px] border-y border-gray-100 pointer-events-none" />
-                
-                <WheelPicker options={years} value={tempDate.year} onChange={(v) => setTempDate({...tempDate, year: v})} />
-                <WheelPicker options={months} value={tempDate.month} onChange={(v) => setTempDate({...tempDate, month: v})} />
-                <WheelPicker options={days} value={tempDate.day} onChange={(v) => setTempDate({...tempDate, day: v})} />
+
+                <WheelPicker options={years} value={tempDate.year} onChange={(v) => setTempDate({ ...tempDate, year: v })} />
+                <WheelPicker options={months} value={tempDate.month} onChange={(v) => setTempDate({ ...tempDate, month: v })} />
+                <WheelPicker options={days} value={tempDate.day} onChange={(v) => setTempDate({ ...tempDate, day: v })} />
               </div>
             </motion.div>
           </>

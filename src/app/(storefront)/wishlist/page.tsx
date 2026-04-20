@@ -16,10 +16,10 @@ export default function WishlistPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchWishlist = async () => {
-    const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
+    const token = (session as any)?.backendToken || localStorage.getItem('instalook_token');
     if (!token) {
-        setIsLoading(false);
-        return;
+      setIsLoading(false);
+      return;
     }
 
     try {
@@ -41,7 +41,7 @@ export default function WishlistPage() {
   }, [session, status]);
 
   const removeFromWishlist = async (productId: string) => {
-    const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
+    const token = (session as any)?.backendToken || localStorage.getItem('instalook_token');
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/wishlist/toggle`, {
         method: 'POST',
@@ -104,7 +104,7 @@ export default function WishlistPage() {
         <div className="p-4 grid grid-cols-2 gap-4">
           <AnimatePresence>
             {items.map((item) => (
-              <motion.div 
+              <motion.div
                 key={item.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -114,14 +114,14 @@ export default function WishlistPage() {
               >
                 <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-50 mb-3 shadow-sm border border-gray-100">
                   <Link href={`/product?id=${item.productId}`}>
-                    <Image 
-                      src={item.image} 
-                      alt={item.name} 
-                      fill 
-                      className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </Link>
-                  <button 
+                  <button
                     onClick={() => removeFromWishlist(item.productId)}
                     className="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-md text-gray-800 hover:text-[#FF4D6D] transition-colors"
                   >
@@ -133,7 +133,7 @@ export default function WishlistPage() {
                     </div>
                   )}
                 </div>
-                
+
                 <Link href={`/product?id=${item.productId}`} className="px-1">
                   <h3 className="text-[13px] font-medium text-gray-800 line-clamp-1 mb-0.5">{item.name}</h3>
                   <div className="flex items-center gap-2">
@@ -144,11 +144,11 @@ export default function WishlistPage() {
                   </div>
                 </Link>
 
-                <button 
-                    onClick={() => router.push(`/product?id=${item.productId}`)}
-                    className="mt-3 w-full border border-gray-200 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                <button
+                  onClick={() => router.push(`/product?id=${item.productId}`)}
+                  className="mt-3 w-full border border-gray-200 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
                 >
-                    View Product
+                  View Product
                 </button>
               </motion.div>
             ))}

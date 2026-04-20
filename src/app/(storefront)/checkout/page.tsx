@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [realCartId, setRealCartId] = useState("");
-  
+
   // Shiprocket Guest States
   const [isPinChecking, setIsPinChecking] = useState(false);
   const [isPinValid, setIsPinValid] = useState(false);
@@ -39,12 +39,12 @@ export default function CheckoutPage() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
 
-  const token = session?.backendToken || (typeof window !== 'undefined' ? localStorage.getItem('savana_token') : null);
-  const user = session?.user || (token && typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('savana_user') || '{}') : null);
+  const token = session?.backendToken || (typeof window !== 'undefined' ? localStorage.getItem('instalook_token') : null);
+  const user = session?.user || (token && typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('instalook_user') || '{}') : null);
 
   const fetchData = async () => {
-    const guestId = localStorage.getItem('savana_guest_id');
-    const savedCoupon = localStorage.getItem('savana_coupon');
+    const guestId = localStorage.getItem('instalook_guest_id');
+    const savedCoupon = localStorage.getItem('instalook_coupon');
     if (savedCoupon) {
       const { discount } = JSON.parse(savedCoupon);
       setCouponDiscount(discount);
@@ -103,7 +103,7 @@ export default function CheckoutPage() {
       setIsPhoneVerified(!!user.phone);
     } else {
       // Only load guest info if not logged in
-      const savedInfo = localStorage.getItem('savana_guest_info');
+      const savedInfo = localStorage.getItem('instalook_guest_info');
       if (savedInfo) {
         const { data, emailV, phoneV } = JSON.parse(savedInfo);
         setGuestFormData(data);
@@ -116,7 +116,7 @@ export default function CheckoutPage() {
   // Save guest info on change
   useEffect(() => {
     if (!token) {
-      localStorage.setItem('savana_guest_info', JSON.stringify({
+      localStorage.setItem('instalook_guest_info', JSON.stringify({
         data: guestFormData,
         emailV: isEmailVerified,
         phoneV: isPhoneVerified
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
           key: "rzp_test_Sd8PCYXaf5yNfQ", // THIS IS A PLACEHOLDER - IT USES KEY ON BACKEND FOR VERANCE
           amount: rzpOrder.amount,
           currency: "INR",
-          name: "Savana E-Commerce",
+          name: "instalook E-Commerce",
           description: "Premium Fashion Order",
           order_id: rzpOrder.id,
           handler: async function (response: any) {
@@ -264,10 +264,10 @@ export default function CheckoutPage() {
         };
 
         const rzp1 = new (window as any).Razorpay(options);
-        
+
         // Handle closure/failure to reset loading state
         rzp1.on('payment.failed', () => setIsPlacingOrder(false));
-        
+
         rzp1.open();
         // Note: Keep setIsPlacingOrder(true) here!
         return;
@@ -284,7 +284,7 @@ export default function CheckoutPage() {
 
   const finalizeOrder = async (razorpayDetails?: any) => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('savana_user') || '{}');
+      const currentUser = JSON.parse(localStorage.getItem('instalook_user') || '{}');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
       const res = await fetch(`${backendUrl}/api/checkout/place-order`, {
         method: 'POST',
@@ -351,9 +351,9 @@ export default function CheckoutPage() {
                     <div>
                       <p className="text-[14px] font-bold text-gray-900">{addr.name}</p>
                       <p className="text-[12px] text-gray-400 font-medium leading-relaxed mt-1">{addr.flatNo}, {addr.street}, {addr.city}, {addr.pincode}</p>
-                      
+
                       {deliveryEtd && selectedAddressId === addr.id && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           className="mt-3 py-2 px-3 bg-green-50 rounded-xl border border-green-100/50 flex items-center gap-2"
@@ -442,19 +442,18 @@ export default function CheckoutPage() {
                 <div className="flex flex-col gap-1.5 relative">
                   <label className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Pincode</label>
                   <div className="relative">
-                    <input 
-                      required 
-                      type="tel" 
+                    <input
+                      required
+                      type="tel"
                       maxLength={6}
-                      value={guestFormData.pincode} 
+                      value={guestFormData.pincode}
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
                         setGuestFormData({ ...guestFormData, pincode: val });
                         validatePincode(val);
-                      }} 
-                      className={`w-full h-9 border-b outline-none text-[13px] font-medium transition-all ${
-                        isPinValid ? 'border-green-500' : pinError ? 'border-red-500' : 'border-gray-100'
-                      }`} 
+                      }}
+                      className={`w-full h-9 border-b outline-none text-[13px] font-medium transition-all ${isPinValid ? 'border-green-500' : pinError ? 'border-red-500' : 'border-gray-100'
+                        }`}
                     />
                     <div className="absolute right-0 bottom-2 flex items-center gap-1.5">
                       {isPinChecking && <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />}
@@ -463,9 +462,9 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   {pinError && <span className="text-[8px] font-black text-red-500 uppercase tracking-tighter absolute -bottom-3.5">{pinError}</span>}
-                  
+
                   {isPinValid && deliveryEtd && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="absolute left-0 -bottom-10 w-full bg-green-50 px-3 py-1.5 rounded-lg border border-green-100/50 flex items-center gap-2 z-10"
@@ -563,11 +562,11 @@ export default function CheckoutPage() {
         </button>
       </div>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      
+
       {/* Full Screen Premium Loader */}
       <AnimatePresence>
         {isPlacingOrder && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -575,13 +574,13 @@ export default function CheckoutPage() {
           >
             <div className="relative">
               <div className="w-20 h-20 border-2 border-gray-100 rounded-full" />
-              <motion.div 
+              <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 w-20 h-20 border-2 border-black border-t-transparent rounded-full shadow-[0_0_15px_rgba(0,0,0,0.1)]"
               />
             </div>
-            
+
             <motion.div
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -591,10 +590,10 @@ export default function CheckoutPage() {
               <h3 className="text-[14px] font-bold uppercase tracking-[0.2em] text-gray-900">Securing Transaction</h3>
               <p className="text-[11px] font-medium text-gray-400 max-w-[200px] leading-relaxed">Please do not refresh or close this window while we process your request.</p>
             </motion.div>
-            
+
             {/* Elegant Shimmer Line */}
             <div className="mt-8 w-40 h-[2px] bg-gray-50 rounded-full overflow-hidden relative">
-              <motion.div 
+              <motion.div
                 animate={{ left: ["-100%", "100%"] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-black to-transparent"
