@@ -4,6 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('--- Phase 1: Cleaning Database ---');
+  await prisma.homeSectionProduct.deleteMany({});
+  await prisma.specialOffer.deleteMany({});
   await prisma.productVariant.deleteMany({});
   await prisma.cartItem.deleteMany({});
   await prisma.orderItem.deleteMany({});
