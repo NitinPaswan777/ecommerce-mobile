@@ -198,11 +198,29 @@ model Product {
   category            Category              @relation(fields: [categoryId], references: [id])
   images              ProductImage[]
   sizes               Size[]
+  variants            ProductVariant[]
   wishlistItems       WishlistItem[]
   homeSections        HomeSection[]
 
   @@index([categoryId])
   @@map("product")
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color       String?
+  size        String?
+  sku         String?  @unique
+  price       Float?
+  inventory   Int      @default(0)
+  images      String?  @db.Text // Comma separated URLs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+  @@map("productvariant")
 }
 
 model ProductImage {

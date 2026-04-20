@@ -34,12 +34,50 @@ export default function ProductClient({ product }: { product: any }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const images = product?.images?.length > 0 
-    ? product.images.map((img: any) => img.url) 
-    : [
-        "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop"
-      ];
+  // Derived state: Get active variant based on selection
+  const activeVariant = product.variants?.find((v: any) => 
+    v.color === selectedColor?.name && v.size === selectedSize?.name
+  );
+
+  // Dynamic Images based on Color
+  const getDynamicImages = () => {
+    const generalImages = product.images?.map((img: any) => img.url) || [];
+    
+    // Find all images for this color across all sizes
+    const colorSpecificImages = product.variants
+      ?.filter((v: any) => v.color === selectedColor?.name && v.images)
+      .flatMap((v: any) => {
+        if (Array.isArray(v.images)) return v.images;
+        if (typeof v.images === 'string') return v.images.split(',').map((url: string) => url.trim()).filter((url: string) => url.length > 0);
+        return [];
+      })
+      .filter((url: string, index: number, self: string[]) => url && self.indexOf(url) === index) || [];
+
+    const finalImages = colorSpecificImages.length > 0 
+      ? [...colorSpecificImages, ...generalImages.filter(url => !colorSpecificImages.includes(url))]
+      : generalImages;
+
+    // Last resort: Filter out any potential empty strings from final list
+    const validImages = finalImages.filter(url => url && url.startsWith('http'));
+
+    return validImages.length > 0 ? validImages : [
+      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=800&auto=format&fit=crop"
+    ];
+  };
+
+  const images = getDynamicImages();
+
+  // Reset scroll on color change
+  useEffect(() => {
+    scrollToIndex(0);
+    setActiveImageIndex(0);
+  }, [selectedColor?.name]);
+
+  // Price & Stock logic
+  const displayPrice = activeVariant?.price ? parseFloat(activeVariant.price) : (product.price || 0);
+  const displayOriginalPrice = product.originalPrice || 0;
+  const stockCount = activeVariant ? parseInt(activeVariant.inventory || "0") : (product.inventory || 0);
+  const isOutOfStock = stockCount <= 0;
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -62,8 +100,8 @@ export default function ProductClient({ product }: { product: any }) {
   const videoUrl = product?.videoUrl;
 
   let discountPercentage = 0;
-  if (product.originalPrice && product.originalPrice > product.price) {
-    discountPercentage = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  if (displayOriginalPrice && displayOriginalPrice > displayPrice) {
+    discountPercentage = Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100);
   }
 
   const addToBag = async () => {
@@ -140,6 +178,16 @@ export default function ProductClient({ product }: { product: any }) {
       setIsChecking(false);
     }
   };
+
+  // Pre-select first available color/size
+  useEffect(() => {
+    if (product?.colors?.length > 0 && !selectedColor) {
+      setSelectedColor(product.colors[0]);
+    }
+    if (product?.sizes?.length > 0 && !selectedSize) {
+      setSelectedSize(product.sizes[0]);
+    }
+  }, [product]);
   useEffect(() => {
     const fetchInitialStatus = async () => {
       const token = (session as any)?.backendToken || localStorage.getItem('savana_token');
@@ -354,17 +402,17 @@ export default function ProductClient({ product }: { product: any }) {
       <div className="px-4 py-4 flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <h1 className="text-[17px] text-gray-800 tracking-tight font-medium leading-tight">{product.name}</h1>
-          {product.inventory <= 0 && (
+          {isOutOfStock && (
             <span className="bg-red-50 text-[#FF3B30] text-[10px] font-bold px-2 py-0.5 rounded border border-red-100 uppercase tracking-widest">Out of Stock</span>
           )}
         </div>
 
         
         <div className="flex items-end gap-2 mt-1">
-          <span className="text-2xl font-bold text-[#FF3B30]">₹{product.price.toLocaleString('en-IN')}</span>
-          {product.originalPrice && (
+          <span className="text-2xl font-bold text-[#FF3B30]">₹{displayPrice.toLocaleString('en-IN')}</span>
+          {displayOriginalPrice && (
             <>
-              <span className="text-sm text-gray-400 line-through mb-1">MRP ₹{product.originalPrice.toLocaleString('en-IN')}</span>
+              <span className="text-sm text-gray-400 line-through mb-1">MRP ₹{displayOriginalPrice.toLocaleString('en-IN')}</span>
               <div className="bg-[#FF4D6D] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm mb-1 align-middle tracking-wider shadow-sm">
                 {discountPercentage}%OFF
               </div>
@@ -382,7 +430,7 @@ export default function ProductClient({ product }: { product: any }) {
             <span className="text-xs font-bold uppercase tracking-widest text-black">COLOR:</span>
             <span className="text-xs font-medium text-gray-700 capitalize">{selectedColor?.name || 'Please select'}</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
             {product.colors.map((color: any, idx: number) => {
               const isActive = selectedColor?.name === color.name;
               return (
@@ -502,8 +550,23 @@ export default function ProductClient({ product }: { product: any }) {
         </div>
       </div>
 
+      {/* Product Description */}
+      {product.description && (
+        <div className="px-4 mt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-xs font-black tracking-widest uppercase text-gray-900 shrink-0">Product Details</h2>
+            <div className="h-[1px] bg-gray-100 flex-1"></div>
+          </div>
+          <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100">
+            <p className="text-[13px] leading-relaxed text-gray-600 whitespace-pre-wrap">
+              {product.description}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-4 py-3 flex gap-4 z-40 items-center shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-100 px-4 py-3 flex gap-4 z-[100] items-center shadow-[0_-4px_15px_rgba(0,0,0,0.08)]">
         <button 
             onClick={toggleWishlist}
             className={`transition-colors p-1 ${isInWishlist ? 'text-[#FF4D6D]' : 'text-gray-700 hover:text-[#FF4D6D]'}`}
@@ -514,7 +577,7 @@ export default function ProductClient({ product }: { product: any }) {
           <MessageSquare className="w-7 h-7 stroke-[1.5]" />
           <div className="absolute top-1 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
         </button>
-        {(product.inventory !== undefined && product.inventory !== null && product.inventory > 0) ? (
+        {!isOutOfStock ? (
           isAdded ? (
             <Link 
               href="/cart"
@@ -572,7 +635,6 @@ export default function ProductClient({ product }: { product: any }) {
              NOTIFY ME
           </button>
         )}
-
       </div>
 
       {/* You May Also Like Section */}

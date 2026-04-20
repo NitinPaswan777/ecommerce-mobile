@@ -84,7 +84,7 @@ app.post('/api/admin/products', async (req, res) => {
     const { 
       name, description, price, originalPrice, 
       sku, inventory, categoryId, tag, videoUrl,
-      images, colors, sizes, fastDelivery, listedFor
+      images, colors, sizes, fastDelivery, listedFor, variants
     } = req.body;
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 10000);
@@ -110,15 +110,29 @@ app.post('/api/admin/products', async (req, res) => {
           create: colors.map((c: any) => ({ name: c.name, hexCode: c.hexCode }))
         },
         sizes: {
-          create: sizes.map((s: string) => ({ name: s }))
+          create: sizes.map((s: any) => ({ name: typeof s === 'string' ? s : s.name }))
+        },
+        variants: {
+          create: (variants || []).map((v: any) => ({
+            color: v.color,
+            size: v.size,
+            sku: v.sku,
+            price: v.price ? parseFloat(v.price) : null,
+            inventory: parseInt(v.inventory || '0'),
+            images: Array.isArray(v.images) ? v.images.join(',') : (v.images || '')
+          }))
         }
       }
     });
 
     res.status(201).json(product);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create product" });
+  } catch (error: any) {
+    console.error("PRODUCT CREATE ERROR:", error);
+    if (error.code === 'P2002') {
+      const target = error.meta?.target || 'field';
+      return res.status(400).json({ error: `A product or variant already exists with this ${target}. Please ensure SKUs are unique.` });
+    }
+    res.status(500).json({ error: "Failed to create product", details: error.message });
   }
 });
 
@@ -126,15 +140,16 @@ app.put('/api/admin/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { 
-      name, description, price, originalPrice, 
-      sku, inventory, categoryId, tag, videoUrl,
-      images, colors, sizes, fastDelivery, listedFor
+      name, description, price, originalPrice, sku, inventory,
+      categoryId, tag, videoUrl, images, colors, sizes, fastDelivery, 
+      listedFor, variants
     } = req.body;
 
     // Delete existing relations to "overwrite" them
     await prisma.productImage.deleteMany({ where: { productId: id } });
     await prisma.color.deleteMany({ where: { productId: id } });
     await prisma.size.deleteMany({ where: { productId: id } });
+    await prisma.productVariant.deleteMany({ where: { productId: id } });
 
     const product = await prisma.product.update({
       where: { id },
@@ -147,7 +162,6 @@ app.put('/api/admin/products/:id', async (req, res) => {
         listedFor,
         inventory: parseInt(inventory),
         tag,
-
         videoUrl,
         fastDelivery: !!fastDelivery,
         categoryId,
@@ -158,15 +172,29 @@ app.put('/api/admin/products/:id', async (req, res) => {
           create: colors.map((c: any) => ({ name: c.name, hexCode: c.hexCode }))
         },
         sizes: {
-          create: sizes.map((s: string) => ({ name: s }))
+          create: sizes.map((s: any) => ({ name: typeof s === 'string' ? s : s.name }))
+        },
+        variants: {
+          create: (variants || []).map((v: any) => ({
+            color: v.color,
+            size: v.size,
+            sku: v.sku,
+            price: v.price ? parseFloat(v.price) : null,
+            inventory: parseInt(v.inventory || '0'),
+            images: Array.isArray(v.images) ? v.images.join(',') : (v.images || '')
+          }))
         }
       }
     });
 
     res.json(product);
-  } catch (error) {
+  } catch (error: any) {
     console.error("UPDATE ERROR:", error);
-    res.status(500).json({ error: "Failed to update product", details: error instanceof Error ? error.message : String(error) });
+    if (error.code === 'P2002') {
+      const target = error.meta?.target || 'field';
+      return res.status(400).json({ error: `A product or variant already exists with this ${target}. Please ensure SKUs are unique.` });
+    }
+    res.status(500).json({ error: "Failed to update product", details: error.message });
   }
 });
 
@@ -230,6 +258,14 @@ app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => 
         }
 
         const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 10000);
+        const finalSku = sku || `SKU-${Math.floor(Math.random() * 100000)}`;
+
+        // Check if SKU already exists to avoid unique constraint crash
+        const existingProduct = await prisma.product.findUnique({ where: { sku: finalSku } });
+        if (existingProduct) {
+          console.log(`Skipping existing SKU: ${finalSku}`);
+          continue;
+        }
 
         const product = await prisma.product.create({
           data: {
@@ -238,7 +274,7 @@ app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => 
             description: description || "",
             price: parseFloat(price),
             originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-            sku: sku || `SKU-${Math.floor(Math.random() * 100000)}`,
+            sku: finalSku,
             inventory: parseInt(inventory || "0"),
             tag,
             listedFor: listedFor || "mens_cloth",
@@ -309,6 +345,15 @@ app.get('/api/admin/categories', async (req, res) => {
 });
 
 
+
+app.get('/api/settings', async (req, res) => {
+  try {
+    const config = await prisma.siteConfig.findUnique({ where: { id: 'global' } });
+    res.json(config || { siteName: "Savana Style" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch settings" });
+  }
+});
 
 // ----------------------------------------------------
 // WEBSITE CONFIGURATION APIs
@@ -979,7 +1024,7 @@ app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const product = await prisma.product.findUnique({
       where: { id: String(id) },
-      include: { images: true, colors: true, sizes: true }
+      include: { images: true, colors: true, sizes: true, variants: true }
     });
     
     if (!product) return res.status(404).json({ error: "Product not found" });

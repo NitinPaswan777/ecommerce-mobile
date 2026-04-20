@@ -1,9 +1,19 @@
-import { PrismaClient } from "@prisma/client";
+
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
 async function main() {
-  const products = await prisma.product.findMany({
-    include: { category: true, colors: true, sizes: true }
+  const product = await prisma.product.findFirst({
+    include: { images: true }
   });
-  console.log(JSON.stringify(products, null, 2));
+  console.log(JSON.stringify(product, null, 2));
 }
-main();
+
+main()
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

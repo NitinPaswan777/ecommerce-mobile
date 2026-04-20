@@ -6,6 +6,15 @@ import { ChevronLeft, Plus, X, Save } from "lucide-react";
 import Link from "next/link";
 import { fetchCategories, fetchSingleProduct, updateProduct, fetchHomeSections } from "@/lib/api";
 
+const SIZE_CHARTS: Record<string, string[]> = {
+  mens_cloth: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  womens_cloth: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  kids_wear: ['22', '24', '26', '28', '30', '32'],
+  men_shoes: ['6', '7', '8', '9', '10', '11', '12'],
+  women_shoes: ['3', '4', '5', '6', '7', '8'],
+  default: ['S', 'M', 'L']
+};
+
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
@@ -27,9 +36,33 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     images: [""] as string[],
     colors: [{ name: "", hexCode: "#000000" }],
     sizes: [] as string[],
+    variants: [] as any[],
     fastDelivery: true
   });
 
+  const generateVariants = () => {
+    const newVariants: any[] = [];
+    formData.colors.forEach(color => {
+      if (!color.name) return;
+      formData.sizes.forEach(size => {
+        // Check if exists
+        const existing = formData.variants.find(v => v.color === color.name && v.size === size);
+        if (existing) {
+          newVariants.push(existing);
+        } else {
+          newVariants.push({
+            color: color.name,
+            size: size,
+            sku: `${formData.sku || 'PRD'}-${color.name.substring(0,2).toUpperCase()}-${size}-${Math.floor(Math.random() * 1000000)}`,
+            price: formData.price,
+            inventory: "0",
+            images: []
+          });
+        }
+      });
+    });
+    setFormData(prev => ({ ...prev, variants: newVariants }));
+  };
 
   useEffect(() => {
     // Load categories first
@@ -63,6 +96,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         images: product.images?.length > 0 ? product.images.map((img: any) => img.url) : [""],
         colors: product.colors?.length > 0 ? product.colors.map((c: any) => ({ name: c.name, hexCode: c.hexCode })) : [{ name: "", hexCode: "#000000" }],
         sizes: product.sizes?.length > 0 ? product.sizes.map((s: any) => s.name) : [],
+        variants: (product.variants || []).map((v: any) => ({
+          ...v,
+          price: String(v.price || ""),
+          inventory: String(v.inventory || "0"),
+          images: v.images ? v.images.split(',') : []
+        })),
         fastDelivery: product.fastDelivery
       });
 
@@ -104,6 +143,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setFormData(prev => ({ ...prev, colors: newColors }));
   };
 
+  const updateVariant = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = { ...newVariants[index], [field]: value };
+      return { ...prev, variants: newVariants };
+    });
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
@@ -112,7 +159,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         ...formData,
         images: formData.images.filter(img => img.trim() !== ""),
         colors: formData.colors.filter(c => c.name.trim() !== ""),
-        sizes: formData.sizes.filter(s => s.trim() !== "")
+        sizes: formData.sizes.filter(s => s.trim() !== ""),
+        variants: formData.variants.map(v => ({
+          ...v,
+          images: Array.isArray(v.images) ? v.images.filter((img: string) => img.trim() !== "") : []
+        }))
       };
       await updateProduct(id, finalData);
       router.push("/products");
@@ -170,36 +221,44 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   </div>
                </div>
 
-               {/* Media */}
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <label style={labelStyle}>Images (URLs) *</label>
-                  {formData.images.map((img, index) => (
-                    <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <input 
-                            value={img} 
-                            onChange={(e) => updateArrayItem('images', index, e.target.value)} 
-                            placeholder="https://example.com/image.jpg" 
-                            style={inputStyle} 
-                            />
-                            <button type="button" onClick={() => removeArrayItem('images', index)} style={{ color: '#ef4444' }}><X size={20}/></button>
-                        </div>
-                        {img && (
-                            <div style={{ width: '80px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                <img src={img} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+               {/* Variants Management */}
+               {formData.variants.length > 0 && (
+                <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px dotted var(--border)' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Variant Specifics (SKUs / Stocks)</h3>
+                  {formData.variants.map((v, i) => (
+                    <div key={i} style={{ padding: '1.25rem', backgroundColor: 'white', borderRadius: '12px', shadow: 'sm', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{v.color} — {v.size}</span>
+                        <button type="button" onClick={() => updateVariant(i, 'removed', true)} style={{ color: '#ef4444' }}><X size={16} /></button>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <input value={v.sku} onChange={(e) => updateVariant(i, 'sku', e.target.value)} placeholder="SKU" style={smallInputStyle} />
+                        <input type="number" value={v.price} onChange={(e) => updateVariant(i, 'price', e.target.value)} placeholder="Price" style={smallInputStyle} />
+                        <input type="number" value={v.inventory} onChange={(e) => updateVariant(i, 'inventory', e.target.value)} placeholder="Stock" style={smallInputStyle} />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b' }}>IMAGES FOR {v.color.toUpperCase()}</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          {(v.images || []).map((img: string, imgIdx: number) => (
+                            <div key={imgIdx} style={{ display: 'flex', gap: '0.5rem' }}>
+                              <input value={img} onChange={(e) => {
+                                const newImgs = [...v.images];
+                                newImgs[imgIdx] = e.target.value;
+                                updateVariant(i, 'images', newImgs);
+                              }} style={smallInputStyle} />
                             </div>
-                        )}
+                          ))}
+                          <button type="button" onClick={() => updateVariant(i, 'images', [...(v.images || []), ""])} style={addBtnStyle}>
+                            <Plus size={14} /> Add Variant Image
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
-                  <button type="button" onClick={() => addArrayItem('images', "")} style={addBtnStyle}>
-                     <Plus size={16} /> Add Another Image
-                  </button>
-               </div>
-
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={labelStyle}>Video URL (Optional)</label>
-                  <input name="videoUrl" value={formData.videoUrl} onChange={handleChange} placeholder="https://example.com/video.mp4" style={inputStyle} />
-               </div>
+                </div>
+               )}
         </div>
 
         {/* Sidebar Info */}
@@ -210,6 +269,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                    <select name="categoryId" value={formData.categoryId} onChange={handleChange} required style={inputStyle}>
                       <option value="">Select Category</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                   </select>
+                </div>
+                <div>
+                   <label style={labelStyle}>Listed For *</label>
+                   <select name="listedFor" value={formData.listedFor} onChange={handleChange} required style={inputStyle}>
+                      <option value="mens_cloth">Men's Clothing</option>
+                      <option value="womens_cloth">Women's Clothing</option>
+                      <option value="kids_wear">Kids Wear</option>
+                      <option value="men_shoes">Men's Shoes</option>
+                      <option value="women_shoes">Women's Shoes</option>
                    </select>
                 </div>
                 <div>
@@ -228,46 +297,61 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <label style={labelStyle}>Variants (Colors)</label>
-                {formData.colors.map((c, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input value={c.name} onChange={(e) => updateColor(i, 'name', e.target.value)} placeholder="Color Name" style={inputStyle} />
-                    <input type="color" value={c.hexCode} onChange={(e) => updateColor(i, 'hexCode', e.target.value)} style={{ width: '40px', padding: '0', border: 'none', background: 'none', height: '40px' }} />
-                    <button type="button" onClick={() => removeArrayItem('colors', i)} style={{ color: '#ef4444' }}><X size={20}/></button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => setFormData(p => ({ ...p, colors: [...p.colors, { name: "", hexCode: "#000000" }] }))} style={addBtnStyle}>
-                   <Plus size={16} /> Add Color
-                </button>
-            </div>
+                <label style={labelStyle}>Attributes (Step 1)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b' }}>COLORS</span>
+                        {formData.colors.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '0.4rem' }}>
+                            <input value={c.name} onChange={(e) => updateColor(i, 'name', e.target.value)} placeholder="Name" style={{ ...inputStyle, padding: '0.5rem' }} />
+                            <input type="color" value={c.hexCode} onChange={(e) => updateColor(i, 'hexCode', e.target.value)} style={{ width: '40px', padding: '0', border: 'none', background: 'none', height: '34px' }} />
+                            <button type="button" onClick={() => removeArrayItem('colors', i)} style={{ color: '#ef4444' }}><X size={16}/></button>
+                        </div>
+                        ))}
+                        <button type="button" onClick={() => setFormData(p => ({ ...p, colors: [...p.colors, { name: "", hexCode: "#000000" }] }))} style={addBtnStyle}>
+                        <Plus size={14} /> Add Color
+                        </button>
+                    </div>
 
-            <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <label style={labelStyle}>Available Sizes</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                   {(SIZE_CHARTS[formData.listedFor as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.default).map(size => (
-                     <button 
-                       key={size}
-                       type="button"
-                       onClick={() => {
-                          const newSizes = formData.sizes.includes(size) 
-                            ? formData.sizes.filter(s => s !== size)
-                            : [...formData.sizes, size];
-                          setFormData(prev => ({ ...prev, sizes: newSizes }));
-                       }}
-                       style={{
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '6px',
-                          fontSize: '0.8125rem',
-                          fontWeight: 700,
-                          border: '1px solid var(--border)',
-                          backgroundColor: formData.sizes.includes(size) ? 'var(--accent)' : 'white',
-                          color: formData.sizes.includes(size) ? 'white' : 'inherit',
-                          cursor: 'pointer'
-                       }}
-                     >
-                       {size}
-                     </button>
-                   ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b' }}>SIZES</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                        {(SIZE_CHARTS[formData.listedFor as keyof typeof SIZE_CHARTS] || SIZE_CHARTS.default).map(size => (
+                            <button 
+                            key={size}
+                            type="button"
+                            onClick={() => {
+                                const newSizes = formData.sizes.includes(size) 
+                                ? formData.sizes.filter(s => s !== size)
+                                : [...formData.sizes, size];
+                                setFormData(prev => ({ ...prev, sizes: newSizes }));
+                            }}
+                            style={{
+                                padding: '0.4rem 0.6rem',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                border: '1px solid var(--border)',
+                                backgroundColor: formData.sizes.includes(size) ? 'var(--accent)' : 'white',
+                                color: formData.sizes.includes(size) ? 'white' : 'inherit',
+                                cursor: 'pointer'
+                            }}
+                            >
+                            {size}
+                            </button>
+                        ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                    <button 
+                        type="button"
+                        onClick={generateVariants}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#000', color: '#fff', borderRadius: '0.75rem', fontWeight: 'bold', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                    >
+                        Sync Combinations (Step 2)
+                    </button>
                 </div>
             </div>
 
@@ -280,14 +364,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   );
 }
 
-const SIZE_CHARTS: Record<string, string[]> = {
-  mens_cloth: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  womens_cloth: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-  kids_wear: ['22', '24', '26', '28', '30', '32'],
-  men_shoes: ['6', '7', '8', '9', '10', '11', '12'],
-  women_shoes: ['3', '4', '5', '6', '7', '8'],
-  default: ['S', 'M', 'L']
-};
+const smallInputStyle = { width: '100%', padding: '0.5rem', borderRadius: '0.5rem', background: 'var(--bg-app)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.8125rem' };
 
 const labelStyle = { fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)' };
 const inputStyle = { width: '100%', padding: '0.75rem 1rem', borderRadius: '0.75rem', background: 'var(--bg-app)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none' };
