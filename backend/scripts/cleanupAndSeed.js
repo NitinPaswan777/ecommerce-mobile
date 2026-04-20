@@ -82,7 +82,7 @@ async function main() {
       }
     }
 
-    const price = 1500 + (Math.random() * 8000);
+    const price = Math.floor(1500 + (Math.random() * 8000));
     const colors = ["Red", "Blue", "Black"];
     const sizes = ["S", "M", "L"];
 
