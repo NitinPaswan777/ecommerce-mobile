@@ -1021,6 +1021,8 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { categorySlug, page = 1, limit = 6 } = req.query;
+    const p = Math.max(1, Number(page) || 1);
+    const l = Math.max(1, Number(limit) || 6);
 
     let whereClause = {};
     if (categorySlug) {
@@ -1029,8 +1031,8 @@ app.get('/api/products', async (req, res) => {
 
     const products = await prisma.product.findMany({
       where: whereClause,
-      take: Number(limit),
-      skip: (Number(page) - 1) * Number(limit),
+      take: l,
+      skip: (p - 1) * l,
       include: { images: true, colors: true, sizes: true },
       orderBy: { createdAt: 'desc' }
     });
