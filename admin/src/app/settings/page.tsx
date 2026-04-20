@@ -104,9 +104,10 @@ export default function SettingsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const configRes = await fetch("http://localhost:5000/api/admin/site-config");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const configRes = await fetch(`${backendUrl}/api/admin/site-config`);
       if (configRes.ok) setConfig(await configRes.json());
-      const bannersRes = await fetch("http://localhost:5000/api/admin/banners");
+      const bannersRes = await fetch(`${backendUrl}/api/admin/banners`);
       if (bannersRes.ok) setBanners(await bannersRes.json());
     } catch (error) {
       console.error("Failed to fetch settings", error);
@@ -122,7 +123,8 @@ export default function SettingsPage() {
     const formDataUpload = new FormData();
     formDataUpload.append("file", file);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/upload", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/upload`, {
         method: "POST",
         body: formDataUpload,
       });
@@ -142,7 +144,8 @@ export default function SettingsPage() {
     setSaving(true);
     setSuccess(false);
     try {
-      const res = await fetch("http://localhost:5000/api/admin/site-config", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/site-config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -162,10 +165,11 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!newBanner.imageUrl) return alert("Upload banner image first");
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
     const method = newBanner.id ? "PUT" : "POST";
     const url = newBanner.id 
-      ? `http://localhost:5000/api/admin/banners/${newBanner.id}` 
-      : "http://localhost:5000/api/admin/banners";
+      ? `${backendUrl}/api/admin/banners/${newBanner.id}` 
+      : `${backendUrl}/api/admin/banners`;
 
     try {
       const res = await fetch(url, {
@@ -186,7 +190,8 @@ export default function SettingsPage() {
   const deleteBanner = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/banners/${id}`, { method: "DELETE" });
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+      const res = await fetch(`${backendUrl}/api/admin/banners/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
     } catch (error) {
       alert("Delete failed");
