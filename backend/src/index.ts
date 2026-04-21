@@ -18,6 +18,33 @@ const prisma = new PrismaClient();
 // Initial Search Sync
 syncSearchIndex();
 
+// ----------------------------------------------------
+// MIDDLEWARES
+// ----------------------------------------------------
+
+const requireAuth = (req: any, res: any, next: any) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: "Access denied. Token missing." });
+
+    const token = authHeader.split(' ')[1];
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid or expired token." });
+  }
+};
+
+const requireAdmin = (req: any, res: any, next: any) => {
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Forbidden. Admin access required." });
+    }
+    next();
+  });
+};
+
 // Security and parser middleware - MUST BE AT THE TOP
 app.use(cors({
   origin: [
@@ -46,7 +73,7 @@ app.get('/api/very-unique-test', (req, res) => res.json({ message: 'working' }))
 // ----------------------------------------------------
 // ADMIN APIs (Dashboard & Management)
 // ----------------------------------------------------
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
     const totalRevenue = await prisma.order.aggregate({
       where: { status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] } },
@@ -69,7 +96,7 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-app.get('/api/admin/products', async (req, res) => {
+app.get('/api/admin/products', requireAdmin, async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       include: { category: true, images: true },
@@ -81,7 +108,7 @@ app.get('/api/admin/products', async (req, res) => {
   }
 });
 
-app.get('/api/admin/orders', async (req, res) => {
+app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
       include: { items: { include: { product: true } } },
@@ -93,7 +120,7 @@ app.get('/api/admin/orders', async (req, res) => {
   }
 });
 
-app.post('/api/admin/products', async (req, res) => {
+app.post('/api/admin/products', requireAdmin, async (req, res) => {
   try {
     const {
       name, description, price, originalPrice,
@@ -150,7 +177,7 @@ app.post('/api/admin/products', async (req, res) => {
   }
 });
 
-app.put('/api/admin/products/:id', async (req, res) => {
+app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -213,7 +240,7 @@ app.put('/api/admin/products/:id', async (req, res) => {
 });
 
 
-app.delete('/api/admin/products/:id', async (req, res) => {
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -239,7 +266,7 @@ app.delete('/api/admin/products/:id', async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-app.post('/api/admin/products/bulk', upload.single('file'), async (req, res) => {
+app.post('/api/admin/products/bulk', requireAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -372,7 +399,7 @@ app.get('/api/settings', async (req, res) => {
 // ----------------------------------------------------
 // WEBSITE CONFIGURATION APIs
 // ----------------------------------------------------
-app.get('/api/admin/site-config', async (req, res) => {
+app.get('/api/admin/site-config', requireAdmin, async (req, res) => {
   try {
     const config = await prisma.siteConfig.findUnique({
       where: { id: 'global' }
@@ -389,7 +416,7 @@ app.get('/api/admin/site-config', async (req, res) => {
   }
 });
 
-app.post('/api/admin/site-config', async (req, res) => {
+app.post('/api/admin/site-config', requireAdmin, async (req, res) => {
   try {
     const { logoUrl, bannerUrl, bannerType, siteName } = req.body;
     const config = await prisma.siteConfig.upsert({
@@ -403,7 +430,7 @@ app.post('/api/admin/site-config', async (req, res) => {
   }
 });
 
-// Generic File Upload for Admin
+// Generic File Upload for Admin (Restricted to images only)
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const fs = require('fs');
@@ -415,9 +442,19 @@ const diskStorage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`);
   }
 });
-const diskUpload = multer({ storage: diskStorage });
+const diskUpload = multer({ 
+  storage: diskStorage,
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images are allowed.') as any, false);
+    }
+  }
+});
 
-app.post('/api/admin/upload', diskUpload.single('file'), (req, res) => {
+app.post('/api/admin/upload', requireAdmin, diskUpload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
   const url = `${backendUrl}/uploads/${req.file.filename}`;
@@ -427,7 +464,7 @@ app.post('/api/admin/upload', diskUpload.single('file'), (req, res) => {
 // ----------------------------------------------------
 // HOME SECTION APIs
 // ----------------------------------------------------
-app.get('/api/admin/sections', async (req, res) => {
+app.get('/api/admin/sections', requireAdmin, async (req, res) => {
   try {
     const sections = await prisma.homeSection.findMany({
       where: { isActive: true },
@@ -448,7 +485,7 @@ app.get('/api/admin/sections', async (req, res) => {
   }
 });
 
-app.post('/api/admin/sections', async (req, res) => {
+app.post('/api/admin/sections', requireAdmin, async (req, res) => {
   try {
     const { title, position } = req.body;
     const section = await prisma.homeSection.create({
@@ -460,7 +497,7 @@ app.post('/api/admin/sections', async (req, res) => {
   }
 });
 
-app.post('/api/admin/sections/:id/products', async (req, res) => {
+app.post('/api/admin/sections/:id/products', requireAdmin, async (req, res) => {
   try {
     const { id: sectionId } = req.params;
     const { productId } = req.body;
@@ -1200,22 +1237,6 @@ app.post('/api/auth/verify', async (req, res) => {
     return res.status(500).json({ error: "Failed to verify OTP" });
   }
 });
-// ----------------------------------------------------
-// AUTHENTICATION MIDDLEWARE
-// ----------------------------------------------------
-const requireAuth = (req: any, res: any, next: any) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Access denied. Token missing." });
-
-    const token = authHeader.split(' ')[1];
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid or expired token." });
-  }
-};
 
 // ----------------------------------------------------
 // USER PROFILE & ADDRESS APIs
