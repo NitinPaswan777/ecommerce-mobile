@@ -34,21 +34,21 @@ echo "Removing suspicious files from uploads..."
 # Look for anything not an image in the uploads dir
 find /var/www/ecommerce-mobile/backend/public/uploads -type f ! -name "*.jpg" ! -name "*.png" ! -name "*.webp" ! -name "*.gif" -delete
 
-# 5. Restore Node Modules (in case they were patched)
+# 5. Restore Node Modules (using legacy-peer-deps to avoid conflicts)
 echo "Wiping and reinstalling node_modules..."
-cd /var/www/ecommerce-mobile/backend && rm -rf node_modules package-lock.json && npm install
-cd /var/www/ecommerce-mobile/admin && rm -rf node_modules package-lock.json && npm install
-cd /var/www/ecommerce-mobile && rm -rf node_modules package-lock.json && npm install
+cd /var/www/ecommerce-mobile && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
+cd /var/www/ecommerce-mobile/backend && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
+cd /var/www/ecommerce-mobile/admin && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
 
 # 6. Fix Prisma Database
 echo "Synchronizing Prisma Database..."
-cd /var/www/ecommerce-mobile/backend && npx prisma db push
+cd /var/www/ecommerce-mobile/backend && npx prisma db push --accept-data-loss
 
 # 7. Rebuild Projects
 echo "Rebuilding apps..."
+cd /var/www/ecommerce-mobile && npx next build
 cd /var/www/ecommerce-mobile/backend && npm run build
-cd /var/www/ecommerce-mobile/admin && npm run build
-cd /var/www/ecommerce-mobile && npm run build
+cd /var/www/ecommerce-mobile/admin && npx next build
 
 # 8. Restart PM2 with environment variables setup
 echo "Starting services..."
