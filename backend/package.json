@@ -14,15 +14,14 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "cors": "^2.8.6",
-    "crypto": "^1.0.1",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "flexsearch": "^0.8.212",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^2.1.1",
-    "nodemailer": "^8.0.5",
-    "razorpay": "^2.9.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "flexsearch": "^0.7.43",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.13",
+    "razorpay": "^2.9.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
