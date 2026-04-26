@@ -93,9 +93,66 @@ export async function bulkUploadProducts(file: File) {
     if (!res.ok) throw new Error("Failed to process bulk upload");
     return res.json();
 }
+export async function fetchBanners() {
+    const res = await fetch(`${API_URL}/admin/banners`, { headers: getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch banners");
+    return res.json();
+}
+
+export async function createBanner(data: any) {
+    const res = await fetch(`${API_URL}/admin/banners`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error("Failed to create banner");
+    return res.json();
+}
+
+export async function updateBanner(id: string, data: any) {
+    const res = await fetch(`${API_URL}/admin/banners/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error("Failed to update banner");
+    return res.json();
+}
+
+export async function deleteBanner(id: string) {
+    const res = await fetch(`${API_URL}/admin/banners/${id}`, {
+        method: "DELETE",
+        headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Failed to delete banner");
+    return res.json();
+}
+
 export async function fetchSiteConfig() {
     const res = await fetch(`${API_URL}/admin/site-config`, { headers: getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch site config");
+    return res.json();
+}
+
+export async function updateSiteConfig(data: any) {
+    const res = await fetch(`${API_URL}/admin/site-config`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error("Failed to update site config");
+    return res.json();
+}
+
+export async function uploadAdminFile(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_URL}/admin/upload`, {
+        method: "POST",
+        headers: getHeaders(true),
+        body: formData
+    });
+    if (!res.ok) throw new Error("Failed to upload file");
     return res.json();
 }
 
