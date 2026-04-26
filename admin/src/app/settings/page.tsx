@@ -1,7 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, Save, Globe, Image as ImageIcon, Video, Trash2, CheckCircle, Plus, ExternalLink, X, Layout, Sparkles, Edit2 } from "lucide-react";
+import { 
+  Upload, Save, Globe, Image as ImageIcon, Video, 
+  Trash2, CheckCircle, Plus, ExternalLink, X, 
+  Layout, Sparkles, Edit2 
+} from "lucide-react";
+import { 
+  fetchSiteConfig, 
+  updateSiteConfig, 
+  fetchBanners, 
+  createBanner, 
+  updateBanner, 
+  deleteBanner as apiDeleteBanner, 
+  uploadAdminFile 
+} from "@/lib/api";
 
 interface Banner {
   id: string;
@@ -104,11 +117,11 @@ export default function SettingsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-      const configRes = await fetch(`${backendUrl}/api/admin/site-config`);
-      if (configRes.ok) setConfig(await configRes.json());
-      const bannersRes = await fetch(`${backendUrl}/api/admin/banners`);
-      if (bannersRes.ok) setBanners(await bannersRes.json());
+      const configData = await fetchSiteConfig();
+      setConfig(configData);
+      
+      const bannersData = await fetchBanners();
+      setBanners(bannersData);
     } catch (error) {
       console.error("Failed to fetch settings", error);
     } finally {
@@ -120,19 +133,11 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (field === 'bannerUrl') setUploading(true);
-    const formDataUpload = new FormData();
-    formDataUpload.append("file", file);
+    
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-      const res = await fetch(`${backendUrl}/api/admin/upload`, {
-        method: "POST",
-        body: formDataUpload,
-      });
-      if (res.ok) {
-        const { url } = await res.json();
-        if (field === 'logoUrl') setConfig((prev: any) => ({ ...prev, logoUrl: url }));
-        else setNewBanner((prev: any) => ({ ...prev, imageUrl: url }));
-      }
+      const { url } = await uploadAdminFile(file);
+      if (field === 'logoUrl') setConfig((prev: any) => ({ ...prev, logoUrl: url }));
+      else setNewBanner((prev: any) => ({ ...prev, imageUrl: url }));
     } catch (error) {
       alert("Upload failed");
     } finally {
@@ -144,16 +149,9 @@ export default function SettingsPage() {
     setSaving(true);
     setSuccess(false);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-      const res = await fetch(`${backendUrl}/api/admin/site-config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (res.ok) {
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      }
+      await updateSiteConfig(config);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       alert("Failed to save branding");
     } finally {
@@ -165,23 +163,16 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!newBanner.imageUrl) return alert("Upload banner image first");
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-    const method = newBanner.id ? "PUT" : "POST";
-    const url = newBanner.id
-      ? `${backendUrl}/api/admin/banners/${newBanner.id}`
-      : `${backendUrl}/api/admin/banners`;
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newBanner),
-      });
-      if (res.ok) {
-        setNewBanner({ id: "", title: "", subtitle: "", link: "", imageUrl: "", position: "HERO_1", isActive: true, showOverlay: true });
-        setIsModalOpen(false);
-        fetchData();
+      if (newBanner.id) {
+        await updateBanner(newBanner.id, newBanner);
+      } else {
+        await createBanner(newBanner);
       }
+      
+      setNewBanner({ id: "", title: "", subtitle: "", link: "", imageUrl: "", position: "HERO_1", isActive: true, showOverlay: true });
+      setIsModalOpen(false);
+      fetchData();
     } catch (error) {
       alert("Failed to save banner");
     }
@@ -190,9 +181,8 @@ export default function SettingsPage() {
   const deleteBanner = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-      const res = await fetch(`${backendUrl}/api/admin/banners/${id}`, { method: "DELETE" });
-      if (res.ok) fetchData();
+      await apiDeleteBanner(id);
+      fetchData();
     } catch (error) {
       alert("Delete failed");
     }
