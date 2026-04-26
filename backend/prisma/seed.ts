@@ -140,6 +140,25 @@ async function main() {
     ]
   })
 
+  // 5. Create Admin User
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@instalook.in'
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
+  
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { 
+      password: adminPassword,
+      role: 'ADMIN'
+    },
+    create: {
+      name: 'Admin User',
+      email: adminEmail,
+      password: adminPassword,
+      role: 'ADMIN'
+    }
+  })
+  console.log(`Admin user created/updated: ${adminEmail} / ${adminPassword}`)
+
   console.log('Seeding Completed Succesfully!')
 }
 

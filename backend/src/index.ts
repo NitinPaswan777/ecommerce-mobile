@@ -1238,6 +1238,42 @@ app.post('/api/auth/verify', async (req, res) => {
   }
 });
 
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(401).json({ error: "Invalid credentials or unauthorized access." });
+    }
+
+    // Direct password check (User should ideally use bcrypt, but assuming plain text for now as per minimal setup)
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, role: user.role, name: user.name }
+    });
+  } catch (error) {
+    console.error("ADMIN LOGIN ERROR:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ----------------------------------------------------
 // USER PROFILE & ADDRESS APIs
 // ----------------------------------------------------
