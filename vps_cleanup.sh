@@ -10,35 +10,39 @@ echo "Stopping PM2..."
 pm2 stop all
 pm2 delete all
 
-# 2. Kill the malicious scanner process
-echo "Killing malicious processes (scanner_linux)..."
-pkill -f scanner_linux
-killall scanner_linux
+# 2. Kill malicious processes
+echo "Killing malicious processes (scanner_linux, xmrig, kdevtmpfsi)..."
+pkill -9 -f scanner_linux
+pkill -9 -f xmrig
+pkill -9 -f kdevtmpfsi
+pkill -9 -f kinsing
 
-# 3. Locate and remove the malicious binary
-# Based on the logs, it might be in the project root or uploads folder
-echo "Searching for scanner_linux binary..."
-MALICIOUS_PATHS=$(find /var/www/ecommerce-mobile -name "scanner_linux")
-if [ -z "$MALICIOUS_PATHS" ]; then
-    echo "scanner_linux not found in project. Checking /tmp and /var/tmp..."
-    MALICIOUS_PATHS=$(find /tmp /var/tmp -name "scanner_linux")
+# 3. Locate and remove the malicious binaries
+echo "Searching for malicious binaries (silencing permission errors)..."
+# Look for scanner_linux and xmrig
+MALICIOUS_PATHS=$(find /var/www/ecommerce-mobile /tmp /var/tmp -name "scanner_linux" -o -name "xmrig" 2>/dev/null)
+
+if [ -n "$MALICIOUS_PATHS" ]; then
+    for file in $MALICIOUS_PATHS; do
+        echo "Found malicious path: $file. Deleting..."
+        rm -rf "$file"
+    done
+else
+    echo "No specific malicious binaries found. Proceeding with dependency purge."
 fi
 
-for file in $MALICIOUS_PATHS; do
-    echo "Found malicious file: $file. Deleting..."
-    rm -f "$file"
-done
+# 4. Clean up any suspicious cron jobs
+echo "Cleaning up crontab..."
+crontab -l | grep -v "scanner_linux" | grep -v "xmrig" | crontab - 2>/dev/null
 
-# 4. Clean up the uploads directory (common entry point)
-echo "Removing suspicious files from uploads..."
-# Look for anything not an image in the uploads dir
-find /var/www/ecommerce-mobile/backend/public/uploads -type f ! -name "*.jpg" ! -name "*.png" ! -name "*.webp" ! -name "*.gif" -delete
+# 5. Restore Node Modules (Standard clean install)
+echo "Clearing npm cache to remove infected packages..."
+npm cache clean --force
 
-# 5. Restore Node Modules (using legacy-peer-deps to avoid conflicts)
-echo "Wiping and reinstalling node_modules..."
-cd /var/www/ecommerce-mobile && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
-cd /var/www/ecommerce-mobile/backend && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
-cd /var/www/ecommerce-mobile/admin && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
+echo "Wiping and reinstalling clean node_modules..."
+cd /var/www/ecommerce-mobile && rm -rf node_modules package-lock.json && npm install
+cd /var/www/ecommerce-mobile/backend && rm -rf node_modules package-lock.json && npm install
+cd /var/www/ecommerce-mobile/admin && rm -rf node_modules package-lock.json && npm install
 
 # 6. Fix Prisma Database
 echo "Synchronizing Prisma Database..."
